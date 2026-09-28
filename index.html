@@ -3,18 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ruta Sur de España</title>
-<meta name="description" content="Mapa interactivo, itinerario día a día y presupuesto para una ruta en moto por el sur de España. Página estática — funciona con solo abrir el archivo, o subida a GitHub Pages.">
+<meta name="description" content="Mapa, itinerario día a día y presupuesto para una ruta en moto por el norte de Italia, de Milán a Milán en sentido antihorario. Página estática: funciona con solo abrir el archivo o en GitHub Pages.">
+<title>Ruta Norte de Italia</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Figtree:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
 <style>
   :root{
     color-scheme: light;
     --bg:#f6efe1; --surface:#fffdf8; --surface-2:#efe1c8; --surface-3:#e7d7b6;
-    --ink:#241a10; --ink-2:#6b5842; --ink-muted:#9c8a72;
+    --ink:#241a10; --ink-2:#6b5842; --ink-muted:#857259;
     --border:rgba(36,26,16,0.14); --border-strong:rgba(36,26,16,0.24);
-    --accent:#c1592f; --accent-ink:#fff8f2; --accent-2:#0e6f78;
-    --map-sea-1:#cfe9e5; --map-sea-2:#94c9c3; --map-land-1:#efe3c9; --map-land-2:#ddcca4;
+    --accent:#b3261e; --accent-ink:#fff7f2; --accent-2:#17695a;
+    --map-sea-1:#d3e8ea; --map-sea-2:#a3cdd3; --map-land-1:#f2e8d0; --map-land-2:#dccba4;
+    --map-lake:#a8d1d7; --map-border:#8d7657; --map-label:#7a6a55;
     --route:#241a10;
+    --ok:#2f7d4f; --warn:#b7791f; --over:#a4161a;
     --cat-transporte:#c1592f; --cat-alojamiento:#0e8c78; --cat-comida:#c78a1e; --cat-actividades:#99295c; --cat-otros:#78962c;
     --shadow: 0 1px 2px rgba(36,26,16,0.07), 0 10px 26px -14px rgba(36,26,16,0.35);
     --radius: 14px;
@@ -22,17 +24,18 @@
     --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-mono: "Space Mono", ui-monospace, "SF Mono", monospace;
   }
-  /* Tema siempre claro — no sigue el modo oscuro del sistema, a propósito. */
+  /* Tema siempre claro, igual que el cuaderno de España: no sigue el modo oscuro del sistema, a propósito. */
 
   *{box-sizing:border-box;}
   html,body{margin:0;}
   body{background:var(--bg); color:var(--ink); font-family:var(--font-body);}
-  .page{max-width:1080px; margin:0 auto; padding:20px 16px 64px; display:flex; flex-direction:column; gap:22px;}
+  .page{max-width:1120px; margin:0 auto; padding-block:20px 64px; padding-inline:16px; display:flex; flex-direction:column; gap:22px;}
 
   a{color:var(--accent-2);}
   button{font-family:inherit;}
   input,select,textarea{font-family:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:8px 10px; font-size:14px;}
   input:focus,select:focus,textarea:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  button:focus-visible,a:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
 
   /* ---------- hero ---------- */
   .hero{background:linear-gradient(160deg,var(--surface-2),var(--surface)); border:1px solid var(--border); border-radius:20px; padding:22px 22px 18px; box-shadow:var(--shadow);}
@@ -50,28 +53,57 @@
   .save-note .dot.warn{background:var(--cat-comida);}
   .save-note .dot.err{background:var(--cat-actividades);}
 
-  .stats-row{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:10px;}
-  .stat-tile{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:10px 12px;}
+  .stats-row{display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:10px;}
+  .stat-tile{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:10px 12px; min-width:0;}
   .stat-tile .k{display:block; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-muted);}
-  .stat-tile .v{display:block; font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:20px; font-weight:700; margin-top:2px;}
+  .stat-tile .v{display:block; font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:20px; font-weight:700; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .stat-tile.hero-stat{background:var(--accent); border-color:var(--accent);}
   .stat-tile.hero-stat .k, .stat-tile.hero-stat .v{color:var(--accent-ink);}
-  @media (max-width:640px){ .stats-row{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:760px){ .stats-row{grid-template-columns:repeat(2,1fr);} .stat-tile.hero-stat{grid-column:1 / -1;} }
 
   /* ---------- tabs ---------- */
-  .tabs{display:flex; gap:6px; background:var(--surface-2); padding:5px; border-radius:12px; border:1px solid var(--border); width:fit-content;}
+  .tabs{display:flex; flex-wrap:wrap; gap:6px; background:var(--surface-2); padding:5px; border-radius:12px; border:1px solid var(--border); width:fit-content; max-width:100%;}
   .tab{border:none; background:transparent; padding:9px 16px; border-radius:8px; font-size:14px; font-weight:600; color:var(--ink-2); cursor:pointer;}
   .tab.active{background:var(--surface); color:var(--ink); box-shadow:var(--shadow);}
   .panel{display:none;}
   .panel.active{display:block;}
 
   /* ---------- map ---------- */
-  .map-card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;}
-  .map-wrap{position:relative; width:100%; aspect-ratio:880/686; background:var(--map-sea-1);}
+  .map-layout{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:16px; align-items:start; margin-top:16px;}
+  @media (max-width:900px){ .map-layout{grid-template-columns:1fr;} }
+  .side-col{display:flex; flex-direction:column; gap:16px; min-width:0;}
+  .map-card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; min-width:0;}
+  .view-bar{display:flex; flex-wrap:wrap; gap:6px; padding:10px 12px; border-bottom:1px solid var(--border);}
+  .chip{font-size:12px; font-weight:600; border:1px solid var(--border-strong); background:var(--surface); color:var(--ink-2); border-radius:999px; padding:5px 11px; cursor:pointer;}
+  .chip:hover{border-color:var(--accent);}
+  .chip.active{background:var(--ink); color:var(--surface); border-color:var(--ink);}
+  .map-wrap{position:relative; width:100%; max-width:100%; aspect-ratio:720/824; background:var(--map-sea-1);}
   .map-wrap svg{width:100%; height:100%; display:block;}
-  .map-legend{display:flex; flex-wrap:wrap; gap:10px 16px; padding:10px 14px; border-top:1px solid var(--border); font-size:12px; color:var(--ink-2); align-items:center;}
+  .map-legend{display:flex; flex-wrap:wrap; gap:8px 16px; padding:10px 14px; border-top:1px solid var(--border); font-size:12px; color:var(--ink-2); align-items:center;}
   .map-legend .dot{width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:5px; vertical-align:middle;}
-  .map-actions{padding:12px 14px; border-top:1px solid var(--border); display:flex; justify-content:flex-end;}
+  .map-legend .ring{width:11px; height:11px; border-radius:50%; border:1.6px solid var(--ink); display:inline-block; margin-right:5px; vertical-align:middle;}
+  .map-legend .line{display:inline-block; width:22px; height:0; margin-right:6px; vertical-align:middle; border-top:3px dotted var(--route);}
+  .map-legend .line.tren{border-top:2px dashed var(--accent-2);}
+  .map-actions{padding:12px 14px; border-top:1px solid var(--border); display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;}
+  .map-hint{font-size:12px; color:var(--ink-muted); flex:1; min-width:180px;}
+
+  #mapSvg .sea{fill:url(#seaGrad);}
+  #mapSvg .land{fill:url(#landGrad); stroke:var(--map-land-2); stroke-width:1.2;}
+  #mapSvg .lake{fill:var(--map-lake); stroke:var(--map-sea-2); stroke-width:.8;}
+  #mapSvg .border{fill:none; stroke:var(--map-border); stroke-width:1.1; stroke-dasharray:5 4; opacity:.55;}
+  #mapSvg .geo-label{font-family:var(--font-mono); font-size:10px; letter-spacing:.2em; fill:var(--map-label);}
+  #mapSvg .lake-label{font-family:var(--font-body); font-style:italic; font-size:11px; fill:var(--accent-2);}
+  #mapSvg .seg-moto{fill:none; stroke:var(--route); stroke-width:2.5; stroke-dasharray:1 7; stroke-linecap:round; opacity:.85;}
+  #mapSvg .seg-tren{fill:none; stroke:var(--accent-2); stroke-width:1.8; stroke-dasharray:6 4; opacity:.9;}
+  #mapSvg .leader{stroke:var(--ink-muted); stroke-width:1; opacity:.5;}
+  #mapSvg .true-dot{fill:var(--ink-muted); opacity:.65;}
+  #mapSvg .marker{fill:var(--accent); stroke:var(--surface); stroke-width:2;}
+  #mapSvg .marker.tren{fill:var(--accent-2);}
+  #mapSvg .base-ring{fill:none; stroke:var(--ink); stroke-width:1.6;}
+  #mapSvg .marker-num{font-family:var(--font-mono); font-weight:700; fill:var(--accent-ink);}
+  #mapSvg .stop-label{font-family:var(--font-body); font-size:11.5px; font-weight:600; fill:var(--ink); paint-order:stroke; stroke:var(--surface); stroke-width:3px; stroke-linejoin:round;}
+  #mapSvg .scale{stroke:var(--ink-muted); stroke-width:2;}
+  #mapSvg .scale-text{font-family:var(--font-mono); font-size:10px; fill:var(--ink-muted);}
 
   .btn{font-size:13px; font-weight:600; border-radius:9px; padding:8px 14px; border:1px solid var(--border-strong); background:var(--surface); color:var(--ink); cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:6px;}
   .btn:hover{border-color:var(--accent);}
@@ -81,50 +113,76 @@
   .btn-ghost:hover{color:var(--ink);}
   .btn-sm{font-size:12px; padding:6px 10px;}
   .btn[disabled]{opacity:.45; pointer-events:none;}
+  .btn[aria-disabled="true"]{opacity:.45; pointer-events:none;}
 
-  .split{display:grid; grid-template-columns:1.35fr 1fr; gap:16px; align-items:start; margin-top:16px;}
-  @media (max-width:860px){ .split{grid-template-columns:1fr;} }
-
-  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px;}
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; min-width:0;}
   .card h3{font-family:var(--font-display); font-size:17px; margin:0 0 10px;}
 
   .add-form{display:flex; flex-direction:column; gap:8px;}
   .add-form .row{display:flex; gap:8px; flex-wrap:wrap;}
-  .add-form select, .add-form input{flex:1; min-width:120px;}
+  .add-form select, .add-form input[type="text"]{flex:1; min-width:120px;}
+  .check-row{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-2);}
+  .check-row input{width:16px; height:16px; accent-color:var(--accent-2);}
   .custom-fields{display:none; gap:8px; flex-wrap:wrap;}
   .custom-fields.show{display:flex;}
   .custom-fields input{min-width:90px;}
 
-  .stops-list{list-style:none; margin:12px 0 0; padding:0; display:flex; flex-direction:column; gap:6px; max-height:420px; overflow-y:auto;}
-  .stop-row{display:flex; align-items:center; gap:8px; padding:8px 8px 8px 6px; border:1px solid var(--border); border-radius:10px; background:var(--surface);}
-  .stop-num{font-family:var(--font-mono); font-size:12px; width:22px; height:22px; border-radius:50%; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; flex:none;}
-  .stop-info{flex:1; min-width:0;}
+  .stops-list{list-style:none; margin:12px 0 0; padding:0; display:flex; flex-direction:column; gap:6px; max-height:560px; overflow-y:auto;}
+  .stop-row{display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; padding:8px 8px 8px 6px; border:1px solid var(--border); border-radius:10px; background:var(--surface);}
+  .stop-num{font-family:var(--font-mono); font-size:11.5px; width:24px; height:24px; border-radius:50%; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; flex:none;}
+  .stop-num.tren{background:var(--accent-2);}
+  .stop-num.base{box-shadow:0 0 0 2px var(--surface), 0 0 0 3.6px var(--ink);}
+  .stop-info{flex:1; min-width:140px;}
   .stop-name{font-weight:600; font-size:14px;}
   .stop-meta{font-size:11.5px; color:var(--ink-muted);}
-  .stop-day-select{font-size:12px; padding:5px 6px; max-width:120px;}
-  .stop-actions{display:flex; gap:2px; flex:none;}
+  .stop-controls{display:flex; align-items:center; gap:2px; margin-left:auto;}
+  .stop-day-select{font-size:12px; padding:5px 6px; max-width:132px;}
+  .mode-chip{font-size:11px; font-weight:700; border:1px solid var(--border-strong); border-radius:999px; background:var(--surface); color:var(--ink-2); padding:3px 8px; cursor:pointer; margin-left:4px;}
+  .mode-chip.tren{color:var(--accent-2); border-color:var(--accent-2);}
 
   /* ---------- itinerary ---------- */
-  .cal-toolbar{display:flex; justify-content:space-between; align-items:center; margin-top:16px;}
+  .cal-toolbar{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-top:16px;}
   .days-list{display:flex; flex-direction:column; gap:14px; margin-top:12px;}
   .day-card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px;}
   .day-head{display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;}
   .day-badge{font-family:var(--font-mono); font-size:12px; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:4px 8px; flex:none;}
-  .day-fields{display:flex; gap:8px; flex-wrap:wrap; flex:1;}
-  .day-fields input[type="text"]{flex:1; min-width:160px; font-weight:600;}
-  .day-fields input[type="date"]{width:150px;}
-  .day-notes{width:100%; margin-top:10px; min-height:44px; resize:none; overflow:hidden; font-size:13.5px;}
+  .day-fields{display:flex; gap:8px; flex-wrap:wrap; flex:1; min-width:0;}
+  .day-fields input[type="text"]{flex:1; min-width:180px; font-weight:600;}
+  .day-meta{display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; margin-top:10px;}
+  .km-field{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-2); font-weight:600;}
+  .km-field input{width:84px; font-family:var(--font-mono); font-variant-numeric:tabular-nums; padding:5px 8px; font-size:13px;}
+  .km-meter{display:flex; align-items:center; gap:8px; flex:1; min-width:200px; max-width:360px;}
+  .km-track{flex:1; height:8px; background:var(--surface-2); border-radius:6px; overflow:hidden;}
+  .km-fill{height:100%; border-radius:6px;}
+  .km-fill.ok{background:var(--ok);} .km-fill.warn{background:var(--warn);} .km-fill.over{background:var(--over);} .km-fill.none{background:transparent;}
+  .km-state{font-size:11.5px; font-weight:700; white-space:nowrap;}
+  .km-state.ok{color:var(--ok);} .km-state.warn{color:var(--warn);} .km-state.over{color:var(--over);} .km-state.none{color:var(--ink-muted); font-weight:600;}
+  .day-link{font-size:12.5px; font-weight:600;}
+  .day-notes-box{margin-top:10px;}
+  .day-notes{width:100%; min-height:44px; resize:none; overflow:hidden; font-size:13.5px; line-height:1.5;}
+  .day-notes-toolbar{display:none; gap:4px; margin-bottom:6px;}
+  .day-notes-box.editing .day-notes-toolbar{display:flex; align-items:center;}
+  .day-notes-box.editing .day-notes-view{display:none;}
+  .day-notes-box:not(.editing) .day-notes{display:none;}
+  .note-bold-btn{font-family:var(--font-body); font-weight:800; width:26px; height:26px; padding:0; justify-content:center;}
+  .day-notes-hint{font-size:11.5px; color:var(--ink-muted);}
+  .day-notes-view{width:100%; min-height:44px; font-size:13.5px; line-height:1.55; white-space:pre-wrap; overflow-wrap:anywhere; border:1px solid transparent; border-radius:9px; padding:8px 10px; cursor:text; color:var(--ink); max-width:78ch;}
+  .day-notes-view:hover{border-color:var(--border);}
+  .day-notes-view:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:transparent;}
+  .day-notes-view b{font-weight:700;}
+  .day-notes-empty{color:var(--ink-muted);}
 
+  .expense-scroll{overflow-x:auto;}
   .expense-table{width:100%; margin-top:10px; border-collapse:collapse;}
   .expense-table th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-muted); font-weight:600; padding:4px 6px; border-bottom:1px solid var(--border);}
   .expense-table td{padding:5px 6px; border-bottom:1px solid var(--border); font-size:13.5px; vertical-align:middle;}
   .expense-table td.amt{font-family:var(--font-mono); font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap;}
-  .cat-chip{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; padding:2px 8px; border-radius:999px; background:var(--surface-2);}
+  .cat-chip{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; padding:2px 8px; border-radius:999px; background:var(--surface-2); white-space:nowrap;}
   .cat-chip .dot{width:7px; height:7px; border-radius:50%;}
   .expense-add-row td{padding-top:8px;}
   .expense-add-row input, .expense-add-row select{font-size:12.5px; padding:5px 6px;}
-  .expense-add-row .concept{width:100%;}
-  .expense-add-row .amount{width:74px;}
+  .expense-add-row .concept{flex:1; min-width:160px;}
+  .expense-add-row .amount{width:110px;}
   .day-subtotal{text-align:right; margin-top:8px; font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:14px;}
   .day-subtotal b{font-size:16px;}
 
@@ -132,7 +190,8 @@
 
   /* ---------- budget summary ---------- */
   .budget-card{margin-top:18px;}
-  .bar-row{display:grid; grid-template-columns:120px 1fr 74px; align-items:center; gap:10px; margin:9px 0;}
+  .bar-row{display:grid; grid-template-columns:150px 1fr 80px; align-items:center; gap:10px; margin:9px 0;}
+  @media (max-width:480px){ .bar-row{grid-template-columns:110px 1fr 70px;} }
   .bar-label{font-size:13px; color:var(--ink-2);}
   .bar-row.is-zero .bar-label, .bar-row.is-zero .bar-value{color:var(--ink-muted);}
   .bar-track{height:10px; background:var(--surface-2); border-radius:6px; overflow:hidden;}
@@ -141,6 +200,7 @@
   .grand-total-line{display:flex; justify-content:space-between; align-items:baseline; margin-top:14px; padding-top:14px; border-top:1px solid var(--border);}
   .grand-total-line .label{font-family:var(--font-display); font-size:16px;}
   .grand-total-line .value{font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:26px; font-weight:700; color:var(--accent);}
+  .budget-note{font-size:12px; color:var(--ink-muted); margin:10px 0 0;}
 
   /* ---------- calendar ---------- */
   .cal-nav{display:flex; align-items:center; gap:10px;}
@@ -149,23 +209,23 @@
   .cal-startdate-row label{font-size:13px; font-weight:600; flex:none;}
   .cal-startdate-hint{font-size:12px; color:var(--ink-muted); flex:1; min-width:200px;}
   .cal-summary{font-size:13px; color:var(--ink-2); margin-top:10px;}
-  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-top:12px;}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; margin-top:12px;}
   .cal-weekday{font-family:var(--font-mono); font-size:11px; text-transform:uppercase; color:var(--ink-muted); text-align:center; padding:4px 0;}
-  .cal-cell{min-height:76px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:6px; display:flex; flex-direction:column; gap:4px;}
+  .cal-cell{min-height:76px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:6px; display:flex; flex-direction:column; gap:4px; min-width:0;}
   .cal-cell.outside{background:transparent; border-color:transparent;}
   .cal-cell.today{border-color:var(--accent); border-width:2px;}
   .cal-daynum{font-family:var(--font-mono); font-size:11px; color:var(--ink-muted);}
-  .cal-chip{background:var(--accent); color:var(--accent-ink); border-radius:6px; padding:3px 6px; font-size:11px; line-height:1.25;}
+  .cal-chip{background:var(--accent); color:var(--accent-ink); border-radius:6px; padding:3px 6px; font-size:11px; line-height:1.25; overflow-wrap:anywhere;}
   .cal-chip .n{font-family:var(--font-mono); opacity:.85; margin-right:3px;}
   .day-date-computed{font-family:var(--font-mono); font-size:12.5px; color:var(--ink-muted); align-self:center; white-space:nowrap; flex:none;}
   @media (max-width:640px){ .cal-cell{min-height:52px; padding:4px;} .cal-chip{font-size:10px; padding:2px 4px;} .cal-daynum{font-size:10px;} }
 
-  .foot-note{font-size:12.5px; color:var(--ink-muted); line-height:1.5; border-top:1px dashed var(--border); padding-top:14px;}
+  .foot-note{font-size:12.5px; color:var(--ink-muted); line-height:1.55; border-top:1px dashed var(--border); padding-top:14px; margin:0;}
   .foot-note b{color:var(--ink-2);}
   [hidden]{display:none!important;}
 
   /* ---------- toast + confirm dialog ---------- */
-  #toast{position:fixed; left:50%; bottom:22px; transform:translate(-50%,12px); z-index:200;
+  #toast{position:fixed; left:50%; bottom:calc(22px + env(safe-area-inset-bottom, 0px)); transform:translate(-50%,12px); z-index:200;
     background:var(--ink); color:var(--accent-ink); font-size:13.5px; font-weight:600; line-height:1.4;
     padding:11px 18px; border-radius:11px; box-shadow:var(--shadow); max-width:min(92vw,420px); text-align:center;
     opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease;}
@@ -173,9 +233,10 @@
   #toast.err{background:var(--cat-actividades);}
   #toast.ok{background:var(--cat-alojamiento);}
   .confirm-overlay{position:fixed; inset:0; background:rgba(36,26,16,0.45); display:flex; align-items:center; justify-content:center; padding:20px; z-index:210;}
-  .confirm-box{background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; max-width:420px; width:100%;}
+  .confirm-box{background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; max-width:440px; width:100%;}
   .confirm-box p{margin:0 0 16px; font-size:14px; line-height:1.5; color:var(--ink);}
   .confirm-actions{display:flex; justify-content:flex-end; gap:8px;}
+  @media (prefers-reduced-motion: reduce){ #toast{transition:none;} }
 </style>
 </head>
 <body>
@@ -183,23 +244,24 @@
 
   <header class="hero">
     <div class="hero-top">
-      <span class="eyebrow">Cuaderno de ruta &middot; moto</span>
+      <span class="eyebrow">Cuaderno de ruta &middot; moto &middot; Italia</span>
       <div class="io-toolbar">
-        <button type="button" class="btn btn-primary btn-sm" id="exportHtmlBtn" title="Guarda una copia de esta página con el viaje actual ya cargado dentro">⭳ Exportar página HTML</button>
+        <button type="button" class="btn btn-primary btn-sm" id="exportHtmlBtn" title="Descarga una página web independiente con el viaje actual, lista para subir a GitHub">⭳ Exportar HTML (GitHub)</button>
         <button type="button" class="btn btn-ghost btn-sm" id="exportBtn">⭳ Exportar .json</button>
         <button type="button" class="btn btn-ghost btn-sm" id="importBtn">⭱ Importar .json</button>
         <input type="file" id="importFile" accept="application/json" hidden>
-        <button type="button" class="btn btn-ghost btn-sm" id="resetBtn" title="Vuelve al itinerario de ejemplo">↺ Ejemplo</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="resetBtn" title="Vuelve al plan original que armó Claude (reemplaza los cambios)" disabled>↺ Plan original</button>
       </div>
     </div>
-    <input id="tripTitle" class="trip-title" maxlength="80">
-    <input id="tripSubtitle" class="trip-subtitle" maxlength="120">
+    <input id="tripTitle" class="trip-title" maxlength="80" aria-label="Título del viaje">
+    <input id="tripSubtitle" class="trip-subtitle" maxlength="140" aria-label="Subtítulo del viaje">
     <div class="save-note" id="statusNote"><span class="dot" id="statusDot"></span><span id="statusText">Conectando…</span></div>
     <div class="stats-row">
       <div class="stat-tile"><span class="k">Días</span><span class="v" id="statDays">0</span></div>
+      <div class="stat-tile"><span class="k">Km en moto</span><span class="v" id="statKm">0</span></div>
       <div class="stat-tile"><span class="k">Paradas</span><span class="v" id="statStops">0</span></div>
-      <div class="stat-tile hero-stat"><span class="k">Presupuesto total</span><span class="v" id="statTotal">€0</span></div>
       <div class="stat-tile"><span class="k">Media / día</span><span class="v" id="statAvg">€0</span></div>
+      <div class="stat-tile hero-stat"><span class="k">Presupuesto total</span><span class="v" id="statTotal">€0</span></div>
     </div>
   </header>
 
@@ -211,41 +273,52 @@
 
   <main>
     <section id="panel-map" class="panel active">
-      <div class="map-card">
-        <div class="map-wrap">
-          <svg id="mapSvg" viewBox="0 0 880 686" preserveAspectRatio="xMidYMid meet" aria-label="Mapa esquemático de España con la ruta"></svg>
+      <div class="map-layout">
+        <div class="map-card">
+          <div class="view-bar" id="viewBar" role="group" aria-label="Zona del mapa"></div>
+          <div class="map-wrap">
+            <svg id="mapSvg" viewBox="0 0 720 824" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mapa esquemático del norte de Italia con la ruta"></svg>
+          </div>
+          <div class="map-legend">
+            <span><span class="dot" style="background:var(--accent)"></span>Parada en moto</span>
+            <span><span class="dot" style="background:var(--accent-2)"></span>En tren o a pie</span>
+            <span><span class="ring"></span>Donde duermen</span>
+            <span><span class="line"></span>Moto</span>
+            <span><span class="line tren"></span>Tren o a pie</span>
+            <span id="scaleLabel" style="font-family:var(--font-mono); color:var(--ink-muted);"></span>
+          </div>
+          <div class="map-actions">
+            <span class="map-hint">Para navegar día por día, cada día del itinerario tiene su propio enlace a Google Maps.</span>
+            <a id="gmapsLink" class="btn btn-outline" target="_blank" rel="noopener">Vuelta completa en Google Maps ↗</a>
+          </div>
         </div>
-        <div class="map-legend">
-          <span><span class="dot" style="background:var(--accent)"></span>Parada (numerada por orden de ruta)</span>
-          <span id="scaleLabel" style="font-family:var(--font-mono); color:var(--ink-muted);">escala aprox. 100&nbsp;km</span>
-        </div>
-        <div class="map-actions">
-          <a id="gmapsLink" class="btn btn-outline" target="_blank" rel="noopener">Abrir ruta en Google Maps ↗</a>
-        </div>
-      </div>
 
-      <div class="split">
-        <div class="card">
-          <h3>Añadir parada</h3>
-          <form id="addStopForm" class="add-form">
-            <div class="row">
-              <select id="stopPreset"></select>
-            </div>
-            <div class="custom-fields" id="customFields">
-              <input type="text" id="customName" placeholder="Nombre del lugar">
-              <input type="text" inputmode="decimal" id="customLat" placeholder="Latitud (ej. 36.74)">
-              <input type="text" inputmode="decimal" id="customLon" placeholder="Longitud (ej. -5.16)">
-            </div>
-            <div class="row">
-              <select id="stopDay"></select>
-              <button type="submit" class="btn btn-primary">+ Añadir al mapa</button>
-            </div>
-          </form>
-        </div>
-        <div class="card">
-          <h3>Paradas en orden</h3>
-          <ol id="stopsList" class="stops-list"></ol>
-          <div class="empty-hint" id="stopsEmptyHint" hidden>Todavía no hay paradas. Añade la primera arriba — puedes elegir un pueblo o ciudad sugerido, o marcar un punto propio.</div>
+        <div class="side-col">
+          <div class="card">
+            <h3>Añadir parada</h3>
+            <form id="addStopForm" class="add-form">
+              <div class="row">
+                <select id="stopPreset" aria-label="Lugar"></select>
+              </div>
+              <div class="custom-fields" id="customFields">
+                <input type="text" id="customName" placeholder="Nombre del lugar">
+                <input type="text" inputmode="decimal" id="customLat" placeholder="Latitud (ej. 45.88)">
+                <input type="text" inputmode="decimal" id="customLon" placeholder="Longitud (ej. 10.84)">
+              </div>
+              <div class="row">
+                <select id="stopDay" aria-label="Día"></select>
+              </div>
+              <label class="check-row" for="stopNoNav"><input type="checkbox" id="stopNoNav"> En tren o a pie (no entra en la ruta de Google Maps)</label>
+              <div class="row">
+                <button type="submit" class="btn btn-primary">+ Añadir al mapa</button>
+              </div>
+            </form>
+          </div>
+          <div class="card">
+            <h3>Paradas en orden</h3>
+            <ol id="stopsList" class="stops-list"></ol>
+            <div class="empty-hint" id="stopsEmptyHint" hidden>Todavía no hay paradas. Añade la primera arriba: puedes elegir una ciudad, un pueblo o un paso de montaña sugerido, o marcar un punto propio.</div>
+          </div>
         </div>
       </div>
     </section>
@@ -258,7 +331,7 @@
       <div class="cal-startdate-row">
         <label for="tripStartDateItin">Fecha de inicio</label>
         <input type="date" id="tripStartDateItin" class="trip-start-date-input">
-        <span class="cal-startdate-hint">una sola fecha para todo el viaje — cada día de abajo (y el calendario) se ajusta solo a partir de esta.</span>
+        <span class="cal-startdate-hint">Una sola fecha para todo el viaje: cada día de abajo (y el calendario) se ajusta solo a partir de esta. Límite en moto: 300 km por día.</span>
       </div>
       <div id="daysList" class="days-list"></div>
       <div class="empty-hint" id="daysEmptyHint" hidden>Todavía no hay días en el itinerario. Añade el primer día para empezar a repartir presupuesto.</div>
@@ -270,6 +343,7 @@
           <span class="label">Total del viaje</span>
           <span class="value" id="grandTotal2">€0</span>
         </div>
+        <p class="budget-note">Valores en euros para dos personas. Los que dicen "ejemplo", "aprox." o "cotizar" son estimaciones: reemplácenlos cuando tengan precios reales.</p>
       </div>
     </section>
 
@@ -285,7 +359,7 @@
       <div class="cal-startdate-row">
         <label for="tripStartDate">Fecha de inicio del viaje</label>
         <input type="date" id="tripStartDate" class="trip-start-date-input">
-        <span class="cal-startdate-hint">el resto de los días se calcula solo a partir de esta — si añades, borras o reordenas un día en «Itinerario y presupuesto», el calendario se actualiza automáticamente.</span>
+        <span class="cal-startdate-hint">El resto de los días se calcula solo a partir de esta: si añades, borras o reordenas un día en «Itinerario y presupuesto», el calendario se actualiza automáticamente.</span>
       </div>
       <div id="calSummary" class="cal-summary"></div>
       <div class="cal-grid" id="calGrid"></div>
@@ -293,9 +367,10 @@
     </section>
   </main>
 
-  <p class="foot-note">
-    <b>Sobre el mapa:</b> es un mapa esquemático (no callejero) pensado para planear el orden de la ruta y las paradas juntos — las distancias son aproximadas. Cuando quieras navegación real, usa «Abrir ruta en Google Maps».
-    <b>Sobre guardar esta página:</b> es un archivo estático — los cambios se guardan solo en este navegador (almacenamiento local), no se sincronizan solos con nadie más. Después de editar, usa «Exportar página HTML» para descargar una copia con el viaje actual ya cargado dentro, y sube ese archivo a tu repositorio de GitHub (o mándaselo a quien quieras) para compartir la versión más reciente. «Exportar .json» / «Importar .json» sirven como respaldo aparte de los datos, sin el resto de la página.
+  <p class="foot-note" id="footNote">
+    <b>Sobre el mapa:</b> es un mapa esquemático (no callejero) para ver el orden de la ruta y dónde duermen; los botones de arriba acercan cada zona. Los km de cada día se calcularon por carretera y se pueden corregir en el itinerario. Para navegar, usen el enlace a Google Maps de cada día.
+    <b>Sobre compartir esta página:</b> el viaje se guarda en esta misma página de Claude y se sincroniza en vivo con quien pueda abrirla. Usen el botón «Compartir» de Claude (arriba de la página, fuera de este cuaderno) para mandar el link a quien viaja con ustedes; con acceso «puede editar» también podrá añadir paradas y gastos.
+    <b>Sobre exportar a GitHub:</b> «Exportar HTML (GitHub)» descarga una copia independiente de esta página, con el viaje actual adentro, que funciona sola (sin Claude) con solo abrir el archivo o subiéndola a un repositorio con GitHub Pages. Esa copia guarda los cambios solo en el navegador de quien la abra; para compartir la versión más reciente, exporten de nuevo.
   </p>
 </div>
 
@@ -303,69 +378,132 @@
 (function(){
   "use strict";
 
-  /* ---------------- geography ---------------- */
-  var BOUNDS = { latMin:35.9, latMax:42.6, lonMin:-7.7, lonMax:3.4 };
-  var MAP_W = 880, MAP_H = 686;
+  /* Modo de la página: false = artefacto en vivo de Claude (guardado compartido con la
+     capacidad "db"); true = copia estática exportada (guardado en el navegador). */
+  var STATIC_MODE = true;
+  /* Marcador de datos: al exportar, lo que hay entre estos dos comentarios se reemplaza
+     por el viaje actual. En la página en vivo vale null. */
+  var EXPORTED_TRIP_DATA = /*@TRIP_DATA_START@*/{"exportedAt":"2026-09-28T00:02:41.476Z","tripInfo":{"startDate":"2027-07-09","subtitle":"Milán → Milán en sentido antihorario · máx. 300 km por día · ciudades campamento","title":"Ruta en moto por el norte de Italia"},"days":[{"id":"d1","date":"","km":0,"notes":"**Llegada:** vuelo a Malpensa (MXP) y Malpensa Express hasta Milano Cadorna o Centrale (~50 min, ~€13 por persona). Milán es la base de la primera y de la última noche: dejen las maletas grandes guardadas en el hostel y salgan a la ruta solo con el equipaje de la moto.\n\n**Tarde:** el Duomo por dentro y sus **terrazas** (en ascensor; abren hasta las 19:00) → Galleria Vittorio Emanuele II (la tradición es girar sobre el talón encima del toro del mosaico) → Piazza della Scala → Brera al caer la tarde.\n\n**Noche (viernes):** Navigli. Aperitivo en la Darsena o a lo largo del Naviglio Grande: con cada trago llega picada, y en muchos sitios el \"apericena\" alcanza como comida. Pidan un Negroni sbagliato, que se inventó en Milán (Bar Basso). Después, bares de Navigli o discotecas en Corso Como / Garibaldi.\n\n**Comidas (para 2):**\nDesayuno ~€10 · capuchino y cornetto de pie en la barra (sentarse cuesta más).\nAlmuerzo ~€25 · panzerotti de Luini, al lado del Duomo.\nCena / aperitivo ~€65 · risotto alla milanese (con azafrán) o cotoletta.\n\n**Reservas para hacer desde ya:**\n1. Moto en Milán: recoger el sábado 10 temprano y devolver el domingo 18 en la tarde (9 días).\n2. Torre de Pisa (domingo 11, turno de 16:30 a 17:30): solo en opapisa.it; abre ~90 días antes, o sea hacia mediados de abril de 2027, y se agota.\n3. Uffizi, martes 13 a las 8:15 (o la Accademia, para el David).\n4. Cúpula de Brunelleschi (Brunelleschi Pass, con horario), lunes 12.\n5. Museos Ferrari, miércoles 14 (entrada con horario).\n6. Última Cena (Cenacolo), domingo 18 a última hora: en 2026 la venta de mayo a agosto abrió el 24 de marzo, con cupos extra cada miércoles para la semana siguiente. Cierra los lunes.\n7. Alojamientos con cancelación gratis, sobre todo Riva del Garda para la noche del 17 (por si aparece el plan Napoli, ver día 10).","order":100,"title":"Milán: llegada, Duomo y Navigli"},{"id":"d2","date":"","km":260,"notes":"**Ruta:** Milán → Génova por la A7 (146 km) → Camogli por la costa, vía Nervi y Recco (26 km) → La Spezia por la A12 (88 km). ~260 km, ~3h40 de manejo sin paradas. Recojan la moto a las 8:30–9:00 para estar en Génova antes de las 11:30.\n\n**Génova (11:30–15:00):** Piazza De Ferrari → Via Garibaldi, la \"Strada Nuova\" de los Palazzi dei Rolli (Patrimonio UNESCO) → los caruggi, los callejones del centro histórico medieval, uno de los más grandes de Europa → Porto Antico. Si hay tiempo: Boccadasse, un pueblito de pescadores dentro de la ciudad.\nAlmuerzo: focaccia genovese recién horneada, farinata (torta de garbanzo) y trofie al pesto (el pesto es de aquí).\n\n**Camogli (~16:00):** casas altas de colores sobre el puerto, foto obligada. En Recco, a 3 km, prueben la focaccia di Recco con queso (IGP).\n\n**La Spezia (~18:00):** check-in y a la estación. **Atardecer en Manarola en tren** (10 min; en verano pasan trenes cada 15–30 min): el mirador de Punta Bonfiglio es la foto clásica de las Cinque Terre. Cena en el pueblo y regreso en tren.\nAlternativa en moto: Portovenere (12 km; suma ~25 km al día), con la iglesia de San Pietro sobre las rocas y la Grotta di Byron.\n\n**Comidas (para 2):** Desayuno ~€10 · Almuerzo en Génova ~€30 · Cena ~€60: muscoli ripieni (mejillones rellenos, típicos de La Spezia), anchoas de Monterosso y, de postre, un sciacchetrà (vino dulce de las Cinque Terre).\n\n**Moto en Italia, lo básico:**\n- Licencia con categoría A + Permiso Internacional de Conducción.\n- Peajes: la moto paga como carro. Carril de tarjetas (\"Carte\") o efectivo; nunca el de Telepass.\n- Gasolina: ~€2,15/L en self-service (septiembre de 2026); en autopista es más cara.\n- ZTL: los centros históricos son zonas de tráfico limitado con cámaras. Parqueen en un \"parcheggio moto\" fuera del centro y caminen; las multas llegan meses después a través de la agencia de alquiler.\n- Límites: autopista 130 km/h (110 con lluvia), carretera 90, ciudad 50. En las autopistas hay \"Tutor\", que mide la velocidad promedio entre dos puntos.\n- Para dos personas y pasos a 2.200 m, una moto de 700–900 cc (tipo BMW F 750/850 GS, Yamaha Tracer 7 o Honda NC750X).","order":200,"title":"Milán → Génova → Camogli → La Spezia"},{"id":"d3","date":"","km":176,"notes":"**Ruta:** mañana en tren por las Cinque Terre, sin moto. Tarde: La Spezia → Pisa por la A12 (77 km) → Florencia por la FI-PI-LI, que no tiene peaje (99 km). ~176 km en moto, ~2h30.\n\n**Cinque Terre (7:30–13:30):** Cinque Terre Treno Card de 1 día (€22–35 por persona según la demanda; incluye los senderos con cobro). Empiecen por el pueblo más lejano y vuelvan hacia La Spezia: Monterosso (la playa grande: báñense temprano) → caminata Monterosso–Vernazza (~2 h, la más linda del Sentiero Azzurro; antes de las 9 no hace tanto calor) o tren → Vernazza (el puerto más fotogénico) → Riomaggiore → tren a La Spezia.\nLa Via dell'Amore (Riomaggiore–Manarola) exige reserva previa.\nConsejo: un domingo de julio se llena; el primer tren de la mañana hace la diferencia.\n\n**Pisa (15:30–18:30):** Piazza dei Miracoli (UNESCO): **subida a la Torre** con el horario reservado (€20 por persona; niños desde 8 años; las mochilas van a casilleros gratis), Catedral y Baptisterio. En verano la Torre abre hasta las 22:30. Después: Borgo Stretto y la Piazza delle Vettovaglie (mercado de día, bares de noche). Parqueen la moto fuera de la ZTL.\nMerienda: cecina, la torta de garbanzo pisana.\n\n**Florencia (~20:00):** suban directo en moto al **Piazzale Michelangelo** para el atardecer sobre el Duomo (el sol se pone hacia las 20:50). Check-in y cena en el Oltrarno.\n\n**Noche:** Piazza Santo Spirito, el ambiente de verano más florentino: bares, gente sentada en las escaleras de la iglesia, música.\n\n**Comidas (para 2):** Desayuno ~€10 · Almuerzo en Monterosso o Vernazza ~€30 (focaccia o un cono de fritura de pescado) · Cena ~€60: ribollita o pappa al pomodoro con un Chianti de la casa.","order":300,"title":"Cinque Terre (mañana) → Torre de Pisa → Florencia"},{"id":"d4","date":"","km":0,"notes":"Día sin moto. **Ojo: los lunes cierran los Uffizi, la Accademia y el Palazzo Pitti** (por eso los Uffizi van mañana a las 8:15). El resto abre.\n\n**Mañana:** el Duomo por dentro (gratis) → **Cúpula de Brunelleschi** (463 escalones; el Brunelleschi Pass, ~€30 por persona, incluye Campanile, Baptisterio y museo, con horario para la cúpula) → Baptisterio y las Puertas del Paraíso.\nSi la cúpula se agota: Campanile de Giotto (414 escalones, y desde arriba se ve la cúpula).\n\n**Mediodía:** Mercato Centrale (en la planta alta hay puestos de comida) o un sánduche de lampredotto en un carrito de trippaio, la comida callejera de Florencia. Si la fila es razonable: schiacciata de All'Antico Vinaio.\n\n**Tarde:** Piazza della Signoria y la Loggia dei Lanzi (esculturas al aire libre, gratis) → Palazzo Vecchio (abre los lunes; la Torre di Arnolfo tiene la mejor vista del centro) → Ponte Vecchio → talleres de artesanos del Oltrarno → subir a San Miniato al Monte (gratis; los monjes cantan vísperas en gregoriano al final de la tarde) y ver el atardecer desde su escalinata, con menos gente que en el Piazzale.\n\n**Cena:** bistecca alla fiorentina para dos. Se cobra por peso (~€50–70 el kilo) y se sirve jugosa, \"al sangue\". De postre, cantucci con vin santo.\n\n**Noche:** aperitivo en una terraza con vista (la del hostel o La Terrazza del Hotel Continentale) y un Negroni, que se inventó en Florencia en 1919 → Santo Spirito, San Niccolò o Piazza Sant'Ambrogio. En verano abren bares y discotecas al aire libre: pregunten en el hostel cuáles funcionan esa semana.\n\n**Plan B en moto (si prefieren rodar):** Chianti + Siena + San Gimignano, ~176 km: SR222 Chiantigiana (Greve, Panzano, Castellina) → Siena (Piazza del Campo y el Duomo) → Monteriggioni → San Gimignano (torres medievales y el gelato de Dondoli) → Florencia. Se pierde la cúpula y el día a pie.\n\n**Comidas (para 2):** Desayuno ~€10 · Almuerzo ~€25 · Cena ~€65 (la bistecca sube el promedio).","order":400,"title":"Florencia a pie"},{"id":"d5","date":"","km":116,"notes":"**Mañana:** **Uffizi a las 8:15** (reserva ~€29 por persona; 2–2,5 h: Botticelli, Leonardo, Miguel Ángel, Caravaggio, y la vista del Arno desde la cafetería). Si prefieren el David: Galleria dell'Accademia (~€20 con reserva, 1 h).\n11:00 salida. Almuerzo temprano en Florencia o picnic en la ruta.\n\n**Ruta (13:00–16:00):** Florencia → Pratolino → San Piero a Sieve → **Passo della Futa** (903 m) → **Passo della Raticosa** (968 m) → Loiano → Bolonia, por la SS65. ~116 km y ~2h40 con curvas. Es el tramo Florencia–Bolonia de la antigua Mille Miglia y la carretera de moteros más famosa del Apenino: curvas enlazadas y poco camión, porque los camiones van por la autopista.\nParadas: el cementerio militar alemán del Passo della Futa (el más grande de Italia de la Segunda Guerra; impresionante y gratis) y el Raticosa, punto de encuentro de moteros.\nDesvío opcional: el circuito de Mugello (MotoGP) está a unos 5 km de San Piero a Sieve.\n\n**Bolonia (tarde):** \"la Dotta, la Grassa, la Rossa\" (la sabia, la gorda, la roja). Piazza Maggiore, la Fontana del Nettuno y la Basilica di San Petronio → Archiginnasio (el Teatro Anatómico de madera) → las Due Torri desde abajo (la subida a la Asinelli está cerrada por las obras de la Garisenda y podría reabrir antes de 2028) → caminar bajo los pórticos (Patrimonio UNESCO).\n\n**Noche:** aperitivo en el Quadrilatero (Via Pescherie Vecchie: tabla de mortadella y salumi con crescentine) → Osteria del Sole (abierta desde 1465: solo venden vino y uno lleva su propia comida) → Via del Pratello para seguir la fiesta. En verano, \"Sotto le stelle del Cinema\" proyecta películas gratis al aire libre en Piazza Maggiore.\n\n**Comidas (para 2):** Desayuno ~€10 · Almuerzo ~€25 · Cena ~€65: tagliatelle al ragù (la verdadera \"boloñesa\", nunca con espagueti), tortellini in brodo, lasagne verdi.","order":500,"title":"Uffizi → Passo della Futa y Raticosa → Bolonia"},{"id":"d6","date":"","km":106,"notes":"**Ruta:** Bolonia → Maranello (46 km) → Módena (17 km) → Bolonia (43 km). ~106 km, ~2 h: día corto de moto para disfrutar los museos.\n\n**Maranello (10:00–13:00):** **Museo Ferrari** (9:30–19:00 de abril a octubre): monoplazas de F1 campeones, la sala de trofeos y simuladores (con costo aparte). La entrada combinada Maranello + Módena cuesta ~€38 por persona (precio de 2025), vale 48 horas y va con horario reservado.\nOpcional: el tour panorámico en bus por dentro de la fábrica y la pista de Fiorano (se compra aparte y tiene cupos limitados).\nPor fuera: la entrada histórica de la fábrica en Via Abetone Inferiore y el túnel de viento de Renzo Piano.\nAlmuerzo: Ristorante Montana, en Fiorano (3 km), la trattoria de los pilotos de Ferrari, llena de recuerdos de F1 (reservar). Más formal: Ristorante Cavallino, frente a la fábrica.\n\n**Módena (14:30–18:30):** **Museo Enzo Ferrari** (el edificio del techo amarillo con forma de capó y la casa taller donde nació Enzo) → centro: Piazza Grande, el Duomo y la Torre Ghirlandina (UNESCO) → una **acetaia**, bodega de aceto balsamico tradizionale (catas con reserva).\n\n**Noche en Bolonia:** Piazza Santo Stefano (las Siete Iglesias iluminadas) y la zona universitaria de Piazza Verdi y Via Zamboni. En julio hay menos estudiantes, pero Bologna Estate programa conciertos y cine al aire libre.\n\n**Motor Valley completo (si les sobra energía):** Museo Ducati y tour de fábrica en Borgo Panigale (Bolonia, con reserva) y el museo Lamborghini en Sant'Agata Bolognese.\n\n**Comidas (para 2):** Desayuno ~€10 · Almuerzo en Montana ~€50 · Cena ~€40: tigelle con cunza (manteca de cerdo, ajo y romero), gnocco fritto con salumi, Lambrusco y Parmigiano con gotas de balsámico.","order":600,"title":"Motor Valley: Museo Ferrari en Maranello + Módena"},{"id":"d7","date":"","km":233,"notes":"**Ruta:** Bolonia → Verona por la A1 y la A22 (144 km, ~1h45) → orilla este del Lago de Garda por la Gardesana Orientale: Bardolino → Garda → Torri del Benaco → Malcesine → Torbole → Riva del Garda (~90 km). ~233 km, ~3h30 de manejo.\n\n**Verona (10:00–14:00):** **Arena** (anfiteatro romano del siglo I que todavía se usa para ópera; los días de función la visita de día cierra más temprano) → Via Mazzini → Casa di Giulietta (el balcón; el patio es gratis) → Piazza delle Erbe (el antiguo foro romano) y Piazza dei Signori, con la estatua de Dante → Torre dei Lamberti → Ponte Pietra → Castel San Pietro, el mejor mirador, con funicular.\nAlmuerzo: risotto all'Amarone, bigoli con ragù de pato o pastissada de caval (estofado de caballo, el plato veronés por excelencia). El pandoro nació aquí.\n\n**El lago (14:00–18:30):** paradas cortas en Bardolino (vino Chiaretto), Punta San Vigilio y Malcesine (Castello Scaligero; opcional el teleférico al Monte Baldo, con cabinas giratorias, a 1.760 m) → Torbole, capital del windsurf (por la tarde sopla la \"Ora\") → Riva.\n\n**Riva del Garda (base de las noches 7 y 9):** chapuzón al llegar (Spiaggia degli Olivi o los Sabbioni), paseo por el lago y la Piazza III Novembre con la Torre Apponale. Aperitivo con Trentodoc, el espumoso de Trentino, mirando las montañas que caen al agua.\n\n**Noche:** bares en el paseo del lago de Riva y Torbole: ambiente de verano relajado, más de terraza que de discoteca.\n\n**Variante ópera en la Arena:** a mediados de julio de 2027 estarán en cartel Aida (la puesta de 1913), La Traviata y Carmen (el festival va del 11 de junio al 11 de septiembre; las más baratas son las gradas de piedra sin numerar, desde unos €30). Para ir, duerman el jueves en Verona y el viernes hagan Verona → lago → Trento → Canazei (~248 km, sin la tarde en el Pordoi).\n\n**Comidas (para 2):** Desayuno ~€10 · Almuerzo en Verona ~€40 · Cena en Riva ~€50: carne salada (res curada, típica del Garda trentino), coregone (pescado del lago) y strangolapreti (ñoquis de espinaca).","order":700,"title":"Verona → Lago de Garda (orilla este) → Riva"},{"id":"d8","date":"","km":203,"notes":"**Ruta:** Riva → Trento (42 km) → autopista A22 hasta Bolzano (58 km) → Val d'Ega → Lago di Carezza → Passo Costalunga (1.745 m) → Vigo di Fassa → Canazei (~53 km). ~153 km hasta Canazei y ~50 km más en la tarde por los pasos: ~203 km en total.\n\n**Mañana:** café en la Piazza Duomo de Trento (fuente de Neptuno; aquí se celebró el Concilio de Trento). Opcional en Bolzano: el museo arqueológico con **Ötzi**, el hombre de los hielos de 5.300 años (~1 h).\n**Lago di Carezza:** el lago esmeralda con el Latemar reflejado; se le da una vuelta corta a pie. No se permite bañarse.\n**Passo Costalunga:** vista del Catinaccio (Rosengarten). Primera entrada en las Dolomitas.\n\n**Canazei (~13:30):** check-in en el valle ladino de Fassa.\n**Tarde:** Passo Pordoi (2.239 m, 13 km) → **teleférico del Sass Pordoi** a la \"Terrazza delle Dolomiti\", a 2.950 m (€32 ida y vuelta, de 9:00 a 17:00): vista de 360° sobre el Sella, la Marmolada y buena parte de la ruta de mañana → Passo Sella (2.240 m) para ver el Sassolungo al atardecer. Con suerte les toca la **enrosadira**, cuando las rocas se ponen rosadas con la última luz.\n\n**Noche:** tranquila. Una cerveza en Canazei y a dormir temprano: mañana es el gran día.\n\n**Comidas (para 2):** Desayuno incluido en el garni · Almuerzo en ruta ~€30 (speck y pan de centeno) · Cena ~€60: canederli (bolas de pan con speck), schlutzkrapfen (ravioles tiroleses), polenta con venado o champiñones y strudel.\n\n**Para la montaña:** en los pasos puede hacer 5–12 °C aunque abajo haga 30, y en julio casi a diario hay tormentas después de las 15:00. Lleven impermeable, guantes de media estación y una capa térmica.","order":800,"title":"Trento → Lago di Carezza → Canazei + Sass Pordoi"},{"id":"d9","date":"","km":270,"notes":"**La ruta memorable (~133 km, 6 pasos):** Canazei → Passo Pordoi (2.239 m) → Arabba → Passo Campolongo (1.875 m) → Corvara, bajo el Sassongher → La Villa → Passo Valparola (2.168 m) → Passo Falzarego (2.105 m) → **Passo Giau** (2.236 m) → Selva di Cadore → Caprile → Malga Ciapela → **Passo Fedaia** (2.057 m), al pie del glaciar de la Marmolada → Canazei.\nSalgan a las 7:30: los sábados de julio los pasos se llenan de motos, carros y ciclistas desde las 10.\n\n**Paradas que valen la pena:**\n- Valparola: Forte Tre Sassi, un fuerte austrohúngaro de la Primera Guerra Mundial, hoy museo.\n- Falzarego: teleférico al Lagazuoi, con los túneles de la guerra, y vista de las Cinque Torri.\n- Giau: el paso más fotografiado por los moteros, con la Ra Gusela y el Nuvolau encima; la bajada hacia Selva di Cadore tiene 29 curvas de herradura. Buen lugar para almorzar, en el refugio del paso.\n- Fedaia: el lago al pie de la Marmolada (3.343 m), la \"reina de las Dolomitas\".\n\n**Regreso a la base (~137 km, ~2h45):** Canazei → Moena → Cavalese (Val di Fiemme) → Val di Cembra (viñedos en terrazas y las pirámides de tierra de Segonzano) → Trento → Riva. Llegada hacia las 18:00 y chapuzón en el lago.\nTotal del día: ~270 km. Es el más largo del viaje; por eso ayer fue más corto y mañana también lo es.\n\n**Si están cansados:** la versión corta va directo del Pordoi a Arabba y al Falzarego, sin Campolongo, Corvara ni Valparola: ~117 km de pasos y ~254 km en el día.\n\n**Passo Gardena:** la provincia de Bolzano planea volverlo zona de tráfico limitado desde el verano de 2027 (de mayo a octubre, con excepciones para residentes, trabajadores y huéspedes de la zona). Esta ruta no pasa por el Gardena, así que no depende de esa decisión.\nRevisen también que ese sábado no haya una carrera de ciclismo que cierre pasos (la Maratona dles Dolomites suele ser el primer domingo de julio).\n\n**Comidas (para 2):** Desayuno en el garni · Almuerzo en refugio ~€45: casunziei all'ampezzana (ravioles de remolacha con semillas de amapola), canederli o kaiserschmarrn (panqueque tirolés en trozos con mermelada) · Cena en Riva ~€45.","order":900,"title":"La gran ruta de los Dolomitas → Riva del Garda"},{"id":"d10","date":"","km":198,"notes":"**Ruta:** Riva → Gardesana Occidentale → Limone sul Garda (11 km) → Porto di Tremosine → **Strada della Forra** → Pieve di Tremosine (13 km) → Tignale → Gargnano (25 km) → Salò (16 km) → Brescia (36 km) → A4 → Milán (97 km). ~198 km, ~3h30 de manejo. Salgan a las 8:30: antes de las 10 la Forra se disfruta sin tráfico.\n\n**Mañana:**\n- Gardesana Occidentale: la carretera tallada en la roca a orillas del lago, con decenas de túneles; sale en la persecución del comienzo de \"Quantum of Solace\" (James Bond).\n- Limone sul Garda: las limonaie, invernaderos de limones en terrazas (Limonaia del Castèl).\n- **Strada della Forra (SP38):** sube por un cañón desde Porto di Tremosine hasta Pieve, con curvas de herradura, túneles y puentes dentro de la garganta. Es angosta y de doble sentido: despacio y pitando en las curvas ciegas. En Porto di Tremosine sigan las señales \"Strada della Forra\".\n- Pieve: la **Terrazza del Brivido**, un balcón a unos 350 m sobre el lago.\n\n**Mediodía:** Salò, almuerzo frente al lago (su malecón es de los más largos del Garda). Opcional antes: el Vittoriale degli Italiani en Gardone Riviera, la casa-museo desbordada del poeta D'Annunzio, con la proa de un buque de guerra en el jardín (~2 h).\n\n**Milán (~15:30):** entrega de la moto (revísenla con la agencia y tomen fotos). Si consiguieron entradas: **Última Cena** (Cenacolo) a última hora, porque mañana lunes está cerrada.\n\n**Última noche:** Navigli o Isola, y el brindis final con un Negroni sbagliato.\n\n**Variante Napoli (solo si coincide):**\nEn julio no hay Serie A: la temporada 2027-28 empieza a finales de agosto. Lo más cercano es la pretemporada del Napoli, que desde hace más de una década se hace en Dimaro (Val di Sole, Trentino). En 2026 fue del 17 al 27 de julio, con entrenamientos abiertos (reserva gratis desde las 10:00 del día anterior) y amistosos el 22 y el 26. Para 2027 la renovación con Trentino está en duda y el Napoli podría llevar el ritiro de julio a Castel di Sangro (Abruzzo), lejos de esta ruta. Las fechas se anuncian en primavera (en 2026, el 10 de abril).\nSi el Napoli confirma Dimaro y las fechas cruzan: el día 9, después del gran circuito, en vez de volver a Riva sigan Canazei → Passo Costalunga → Bolzano → Passo della Mendola → Val di Non → Dimaro (~129 km; ~262 km en el día) y duerman en Val di Sole. Este día: entrenamiento del Napoli en la mañana y Dimaro → Passo del Tonale (1.883 m) → Val Camonica → Lago d'Iseo → Milán (~230 km).\n\n**Comidas (para 2):** Desayuno ~€10 · Almuerzo en Salò ~€45 · Cena de despedida ~€45 (aperitivo abundante y pizza).","order":1000,"title":"Strada della Forra y Garda oeste → Milán (entrega de la moto)"},{"id":"d11","date":"","km":0,"notes":"Lunes en Milán: **cierran la Última Cena, la Pinacoteca di Brera y los museos del Castello Sforzesco**. Abren el Duomo, los patios del Castello y el estadio.\n\n**Mañana:** **San Siro Museum & Tour**, el estadio del Inter y del Milan (~1 h; revisen que no haya evento ese día): es el plan fútbol del viaje si lo del Napoli no se da. Otra opción: patios del Castello Sforzesco → Parco Sempione → Arco della Pace, y una última vuelta por la Galleria.\n**Almuerzo:** risotto alla milanese u ossobuco, y un gelato.\n**Tarde:** recoger las maletas → Malpensa Express (~50 min) → vuelo a Bogotá. Lleguen al aeropuerto 3 horas antes.\n\n**Comidas (para 2):** Desayuno ~€10 · Almuerzo ~€45 · Algo en el aeropuerto ~€45.","order":1100,"title":"Milán: último día y vuelo a Bogotá"}],"stops":[{"id":"s1","category":"ciudad","dayId":"d1","lat":45.4642,"lon":9.19,"name":"Milán","order":100},{"id":"s2","category":"ciudad","dayId":"d2","lat":44.4071,"lon":8.9347,"name":"Génova","order":200},{"id":"s3","category":"costa","dayId":"d2","lat":44.3491,"lon":9.1553,"name":"Camogli","order":300},{"id":"s4","category":"ciudad","dayId":"d2","lat":44.1025,"lon":9.824,"name":"La Spezia","order":400},{"id":"s5","category":"costa","dayId":"d2","lat":44.1066,"lon":9.7289,"name":"Manarola (atardecer, en tren)","nav":false,"order":500},{"id":"s6","category":"costa","dayId":"d3","lat":44.1462,"lon":9.6547,"name":"Monterosso al Mare","nav":false,"order":600},{"id":"s7","category":"costa","dayId":"d3","lat":44.1349,"lon":9.6838,"name":"Vernazza","nav":false,"order":700},{"id":"s8","category":"costa","dayId":"d3","lat":44.0993,"lon":9.7377,"name":"Riomaggiore","nav":false,"order":800},{"id":"s9","category":"ciudad","dayId":"d3","lat":43.723,"lon":10.3966,"name":"Pisa — Piazza dei Miracoli","order":900},{"id":"s10","category":"ciudad","dayId":"d3","lat":43.7629,"lon":11.265,"name":"Florencia — Piazzale Michelangelo","order":1000},{"id":"s11","category":"paso","dayId":"d5","lat":44.0919,"lon":11.2847,"name":"Passo della Futa","order":1100},{"id":"s12","category":"paso","dayId":"d5","lat":44.1647,"lon":11.3589,"name":"Passo della Raticosa","order":1200},{"id":"s13","category":"ciudad","dayId":"d5","lat":44.4938,"lon":11.3426,"name":"Bolonia","order":1300},{"id":"s14","category":"motor","dayId":"d6","lat":44.5297,"lon":10.8612,"name":"Maranello — Museo Ferrari","order":1400},{"id":"s15","category":"motor","dayId":"d6","lat":44.6547,"lon":10.93,"name":"Módena — Museo Enzo Ferrari","order":1500},{"id":"s16","category":"ciudad","dayId":"d6","lat":44.4938,"lon":11.3426,"name":"Bolonia (vuelta a la base)","order":1600},{"id":"s17","category":"ciudad","dayId":"d7","lat":45.439,"lon":10.9944,"name":"Verona","order":1700},{"id":"s18","category":"lago","dayId":"d7","lat":45.548,"lon":10.7214,"name":"Bardolino","order":1800},{"id":"s19","category":"lago","dayId":"d7","lat":45.7644,"lon":10.8091,"name":"Malcesine","order":1900},{"id":"s20","category":"lago","dayId":"d7","lat":45.8858,"lon":10.8413,"name":"Riva del Garda","order":2000},{"id":"s21","category":"ciudad","dayId":"d8","lat":46.0679,"lon":11.1211,"name":"Trento","order":2100},{"id":"s22","category":"naturaleza","dayId":"d8","lat":46.4096,"lon":11.5754,"name":"Lago di Carezza","order":2200},{"id":"s23","category":"paso","dayId":"d8","lat":46.4009,"lon":11.612,"name":"Passo Costalunga","order":2300},{"id":"s24","category":"paso","dayId":"d8","lat":46.4881,"lon":11.8122,"name":"Passo Pordoi — Sass Pordoi","order":2400},{"id":"s25","category":"paso","dayId":"d8","lat":46.5081,"lon":11.7631,"name":"Passo Sella","order":2500},{"id":"s26","category":"pueblo","dayId":"d8","lat":46.4769,"lon":11.7708,"name":"Canazei","order":2600},{"id":"s27","category":"pueblo","dayId":"d9","lat":46.4968,"lon":11.8745,"name":"Arabba","order":2700},{"id":"s28","category":"paso","dayId":"d9","lat":46.52,"lon":11.8742,"name":"Passo Campolongo","order":2800},{"id":"s29","category":"pueblo","dayId":"d9","lat":46.55,"lon":11.875,"name":"Corvara in Badia","order":2900},{"id":"s30","category":"paso","dayId":"d9","lat":46.5433,"lon":11.9736,"name":"Passo Valparola","order":3000},{"id":"s31","category":"paso","dayId":"d9","lat":46.5189,"lon":12.0094,"name":"Passo Falzarego","order":3100},{"id":"s32","category":"paso","dayId":"d9","lat":46.4825,"lon":12.0539,"name":"Passo Giau","order":3200},{"id":"s33","category":"paso","dayId":"d9","lat":46.4535,"lon":11.889,"name":"Passo Fedaia — Marmolada","order":3300},{"id":"s34","category":"pueblo","dayId":"d9","lat":46.2917,"lon":11.46,"name":"Cavalese (Val di Fiemme)","order":3400},{"id":"s35","category":"lago","dayId":"d9","lat":45.8858,"lon":10.8413,"name":"Riva del Garda (vuelta a la base)","order":3500},{"id":"s36","category":"lago","dayId":"d10","lat":45.813,"lon":10.791,"name":"Limone sul Garda","order":3600},{"id":"s37","category":"naturaleza","dayId":"d10","lat":45.7697,"lon":10.7527,"name":"Strada della Forra — Tremosine","order":3700},{"id":"s38","category":"lago","dayId":"d10","lat":45.6072,"lon":10.5203,"name":"Salò","order":3800},{"id":"s39","category":"ciudad","dayId":"d10","lat":45.4642,"lon":9.19,"name":"Milán — entrega de la moto","order":3900},{"id":"s40","category":"ciudad","dayId":"d11","lat":45.4781,"lon":9.124,"name":"Estadio San Siro (tour)","nav":false,"order":4000}],"expenses":[{"id":"e1","amount":1000,"category":"transporte","concept":"Vuelo Bogotá → Milán (2 personas; valor de referencia del viaje a España, cotizar)","dayId":"d1","order":100},{"id":"e2","amount":26,"category":"transporte","concept":"Malpensa Express aeropuerto → centro (2 × €13)","dayId":"d1","order":200},{"id":"e3","amount":130,"category":"alojamiento","concept":"Alojamiento Milán (hostel tipo Ostello Bello o Combo Navigli, ejemplo)","dayId":"d1","order":300},{"id":"e4","amount":40,"category":"actividades","concept":"Terrazas del Duomo en ascensor (2 personas, aprox.)","dayId":"d1","order":400},{"id":"e5","amount":100,"category":"comida","concept":"Comidas","dayId":"d1","order":500},{"id":"e6","amount":1125,"category":"transporte","concept":"Alquiler moto 9 días (media cilindrada tipo F 750 GS, ~€125/día; cotizar)","dayId":"d2","order":600},{"id":"e7","amount":30,"category":"transporte","concept":"Gasolina (~260 km)","dayId":"d2","order":700},{"id":"e8","amount":18,"category":"transporte","concept":"Peajes A7 + A12 (aprox.)","dayId":"d2","order":800},{"id":"e9","amount":120,"category":"alojamiento","concept":"Alojamiento La Spezia (B&B u hostel cerca de la estación, ejemplo)","dayId":"d2","order":900},{"id":"e10","amount":100,"category":"comida","concept":"Comidas","dayId":"d2","order":1000},{"id":"e11","amount":60,"category":"actividades","concept":"Cinque Terre Treno Card 1 día (2 personas, temporada alta)","dayId":"d3","order":1100},{"id":"e12","amount":40,"category":"actividades","concept":"Subida a la Torre de Pisa (2 × €20, opapisa.it)","dayId":"d3","order":1200},{"id":"e13","amount":20,"category":"transporte","concept":"Gasolina (~176 km)","dayId":"d3","order":1300},{"id":"e14","amount":6,"category":"transporte","concept":"Peaje A12 La Spezia → Pisa (aprox.)","dayId":"d3","order":1400},{"id":"e15","amount":140,"category":"alojamiento","concept":"Alojamiento Florencia (hostel con terraza tipo Plus Florence, ejemplo)","dayId":"d3","order":1500},{"id":"e16","amount":100,"category":"comida","concept":"Comidas","dayId":"d3","order":1600},{"id":"e17","amount":60,"category":"actividades","concept":"Brunelleschi Pass: cúpula, campanile y baptisterio (2 × ~€30)","dayId":"d4","order":1700},{"id":"e18","amount":140,"category":"alojamiento","concept":"Alojamiento Florencia","dayId":"d4","order":1800},{"id":"e19","amount":100,"category":"comida","concept":"Comidas (incluye la bistecca)","dayId":"d4","order":1900},{"id":"e20","amount":58,"category":"actividades","concept":"Uffizi a las 8:15 (2 × €29 con reserva)","dayId":"d5","order":2000},{"id":"e21","amount":14,"category":"transporte","concept":"Gasolina (~116 km)","dayId":"d5","order":2100},{"id":"e22","amount":120,"category":"alojamiento","concept":"Alojamiento Bolonia (hostel tipo Dopa o We_Bologna, ejemplo)","dayId":"d5","order":2200},{"id":"e23","amount":100,"category":"comida","concept":"Comidas","dayId":"d5","order":2300},{"id":"e24","amount":76,"category":"actividades","concept":"Museos Ferrari Maranello + Módena, combinado (2 × ~€38, precio 2025)","dayId":"d6","order":2400},{"id":"e25","amount":12,"category":"transporte","concept":"Gasolina (~106 km)","dayId":"d6","order":2500},{"id":"e26","amount":6,"category":"transporte","concept":"Peajes A1 Bolonia ⇄ Módena (aprox.)","dayId":"d6","order":2600},{"id":"e27","amount":120,"category":"alojamiento","concept":"Alojamiento Bolonia","dayId":"d6","order":2700},{"id":"e28","amount":100,"category":"comida","concept":"Comidas","dayId":"d6","order":2800},{"id":"e29","amount":24,"category":"actividades","concept":"Arena di Verona, visita de día (2 personas, aprox.)","dayId":"d7","order":2900},{"id":"e30","amount":26,"category":"transporte","concept":"Gasolina (~233 km)","dayId":"d7","order":3000},{"id":"e31","amount":11,"category":"transporte","concept":"Peajes A1 + A22 Bolonia → Verona (aprox.)","dayId":"d7","order":3100},{"id":"e32","amount":125,"category":"alojamiento","concept":"Alojamiento Riva del Garda (hostel o B&B, ejemplo)","dayId":"d7","order":3200},{"id":"e33","amount":100,"category":"comida","concept":"Comidas","dayId":"d7","order":3300},{"id":"e34","amount":64,"category":"actividades","concept":"Teleférico Sass Pordoi ida y vuelta (2 × €32)","dayId":"d8","order":3400},{"id":"e35","amount":24,"category":"transporte","concept":"Gasolina (~203 km, montaña)","dayId":"d8","order":3500},{"id":"e36","amount":6,"category":"transporte","concept":"Peaje A22 Trento → Bolzano (aprox.)","dayId":"d8","order":3600},{"id":"e37","amount":150,"category":"alojamiento","concept":"Alojamiento Canazei (garni con desayuno, ejemplo)","dayId":"d8","order":3700},{"id":"e38","amount":100,"category":"comida","concept":"Comidas","dayId":"d8","order":3800},{"id":"e39","amount":32,"category":"transporte","concept":"Gasolina (~270 km, montaña)","dayId":"d9","order":3900},{"id":"e40","amount":125,"category":"alojamiento","concept":"Alojamiento Riva del Garda (cancelación gratis, ver variante Napoli)","dayId":"d9","order":4000},{"id":"e41","amount":100,"category":"comida","concept":"Comidas (almuerzo en refugio)","dayId":"d9","order":4100},{"id":"e42","amount":22,"category":"transporte","concept":"Gasolina (~198 km)","dayId":"d10","order":4200},{"id":"e43","amount":8,"category":"transporte","concept":"Peaje A4 Brescia → Milán (aprox.)","dayId":"d10","order":4300},{"id":"e44","amount":34,"category":"actividades","concept":"Última Cena, Cenacolo (2 personas, opcional, aprox.)","dayId":"d10","order":4400},{"id":"e45","amount":130,"category":"alojamiento","concept":"Alojamiento Milán (ejemplo)","dayId":"d10","order":4500},{"id":"e46","amount":100,"category":"comida","concept":"Comidas","dayId":"d10","order":4600},{"id":"e47","amount":60,"category":"actividades","concept":"San Siro Museum & Tour (2 personas, opcional, aprox.)","dayId":"d11","order":4700},{"id":"e48","amount":26,"category":"transporte","concept":"Malpensa Express al aeropuerto (2 × €13)","dayId":"d11","order":4800},{"id":"e49","amount":1447,"category":"transporte","concept":"Tiquete de regreso Milán → Bogotá (2 personas; valor de referencia del viaje a España, cotizar)","dayId":"d11","order":4900},{"id":"e50","amount":100,"category":"comida","concept":"Comidas","dayId":"d11","order":5000}]}/*@TRIP_DATA_END@*/;
+  var MARK_START = "/*@TRIP_DATA_" + "START@*/";
+  var MARK_END = "/*@TRIP_DATA_" + "END@*/";
+  var TRIP_DATA_RE = /\/\*@TRIP_DATA_START@\*\/[\s\S]*?\/\*@TRIP_DATA_END@\*\//;
+  var LS_KEY = "ruta-norte-italia:trip";
+  var KM_LIMIT = 300;
+  var KM_WARN = 250;
+
+  /* ---------------- geografía ---------------- */
+  var MAP_W = 720, MAP_H = 824;
+  var VIEWS = [
+    { id:"all",      label:"Todo el viaje",       cLat:45.025, cLon:10.35, latSpan:4.05 },
+    { id:"liguria",  label:"Liguria y Toscana",   cLat:44.05,  cLon:10.1,  latSpan:2.05 },
+    { id:"emilia",   label:"Emilia y Verona",     cLat:44.65,  cLon:11.1,  latSpan:1.9 },
+    { id:"garda",    label:"Garda y Dolomitas",   cLat:46.05,  cLon:11.2,  latSpan:1.45 },
+    { id:"dolomiti", label:"Dolomitas de cerca",  cLat:46.47,  cLon:11.82, latSpan:0.42 }
+  ];
+  var view = VIEWS[0];
+  var BOUNDS = null;
+  function setView(v){
+    view = v;
+    var lonSpan = v.latSpan * (MAP_W / MAP_H) / Math.cos(v.cLat * Math.PI / 180);
+    BOUNDS = { latMin:v.cLat - v.latSpan/2, latMax:v.cLat + v.latSpan/2, lonMin:v.cLon - lonSpan/2, lonMax:v.cLon + lonSpan/2 };
+  }
   function project(lat, lon){
     var x = (lon - BOUNDS.lonMin) / (BOUNDS.lonMax - BOUNDS.lonMin) * MAP_W;
     var y = (BOUNDS.latMax - lat) / (BOUNDS.latMax - BOUNDS.latMin) * MAP_H;
     return {x:x, y:y};
   }
+  function inView(lat, lon){
+    return lat >= BOUNDS.latMin && lat <= BOUNDS.latMax && lon >= BOUNDS.lonMin && lon <= BOUNDS.lonMax;
+  }
 
-  var COASTLINE = [
-    [37.21,-7.41],[37.18,-6.97],[36.98,-6.55],[36.78,-6.35],[36.53,-6.30],
-    [36.28,-6.10],[36.19,-5.92],[36.01,-5.60],[36.13,-5.45],[36.43,-5.15],
-    [36.51,-4.88],[36.72,-4.42],[36.75,-3.87],[36.73,-3.52],[36.84,-2.47],[37.13,-1.85]
+  /* Tierra firme del norte de Italia y países vecinos, recorrida en sentido horario desde
+     la esquina noroeste (más allá del borde del mapa para que cualquier zoom quede cubierto):
+     costa del Adriático de norte a sur, borde inferior, y costa toscana y ligur hacia el oeste. */
+  var LAND = [
+    [47.6,7.3],[47.6,13.5],[45.72,13.5],[45.71,13.3],[45.69,13.14],[45.635,13.04],[45.595,12.88],[45.555,12.74],
+    [45.50,12.63],[45.455,12.50],[45.43,12.43],[45.37,12.36],[45.28,12.32],[45.21,12.29],[45.12,12.33],[45.05,12.37],
+    [45.00,12.45],[44.96,12.54],[44.90,12.52],[44.85,12.46],[44.82,12.33],[44.80,12.27],[44.68,12.245],[44.56,12.28],
+    [44.49,12.285],[44.42,12.31],[44.31,12.34],[44.26,12.36],[44.20,12.40],[44.15,12.47],[44.065,12.58],[44.00,12.66],
+    [43.965,12.74],[43.91,12.91],[43.84,13.02],[43.77,13.14],[43.715,13.22],[43.68,13.3],[43.60,13.5],[42.4,13.5],
+    [42.4,11.2],[42.55,11.13],[42.67,11.0],[42.76,10.88],[42.80,10.73],[42.88,10.78],[42.92,10.76],[42.93,10.60],
+    [42.925,10.50],[43.00,10.49],[43.09,10.535],[43.17,10.555],[43.24,10.53],[43.30,10.49],[43.35,10.455],[43.385,10.435],
+    [43.405,10.41],[43.46,10.365],[43.495,10.325],[43.55,10.305],[43.59,10.29],[43.625,10.285],[43.67,10.275],[43.77,10.27],
+    [43.83,10.26],[43.865,10.24],[43.91,10.215],[43.935,10.195],[43.96,10.165],[44.00,10.10],[44.035,10.045],[44.045,10.02],
+    [44.045,9.99],[44.03,9.97],[44.05,9.965],[44.075,9.91],[44.085,9.895],[44.095,9.87],[44.105,9.83],[44.09,9.815],
+    [44.07,9.835],[44.05,9.835],[44.06,9.815],[44.07,9.79],[44.10,9.74],[44.105,9.73],[44.12,9.71],[44.135,9.685],
+    [44.145,9.655],[44.135,9.635],[44.17,9.61],[44.18,9.585],[44.22,9.52],[44.24,9.49],[44.255,9.42],[44.27,9.395],
+    [44.305,9.345],[44.315,9.325],[44.335,9.265],[44.35,9.23],[44.335,9.21],[44.31,9.214],[44.303,9.209],[44.297,9.22],
+    [44.316,9.175],[44.323,9.146],[44.35,9.155],[44.36,9.14],[44.375,9.07],[44.38,9.04],[44.385,9.01],[44.39,8.975],
+    [44.395,8.95],[44.405,8.91],[44.42,8.85],[44.425,8.815],[44.425,8.75],[44.40,8.685],[44.39,8.645],[44.36,8.58],
+    [44.345,8.545],[44.33,8.51],[44.305,8.48],[44.27,8.44],[44.23,8.42],[44.205,8.415],[44.17,8.34],[44.15,8.285],
+    [44.13,8.26],[44.05,8.22],[44.005,8.17],[43.975,8.16],[43.955,8.17],[43.91,8.085],[43.885,8.045],[43.875,8.02],
+    [43.855,7.965],[43.84,7.90],[43.83,7.85],[43.815,7.775],[43.80,7.715],[43.78,7.665],[43.77,7.3]
+  ];
+  var LAKES = [
+    { name:"Lago Maggiore", label:[45.93,8.70], pts:[[45.73,8.63],[45.76,8.565],[45.79,8.54],[45.885,8.535],[45.91,8.50],[45.925,8.55],[45.955,8.61],[45.99,8.65],[46.06,8.70],[46.12,8.71],[46.155,8.77],[46.17,8.80],[46.15,8.855],[46.04,8.735],[46.00,8.745],[45.96,8.685],[45.91,8.625],[45.815,8.61],[45.775,8.585]] },
+    { name:"Lago di Lugano", label:null, pts:[[45.98,8.90],[46.00,8.96],[46.02,9.02],[46.03,9.08],[46.00,9.05],[45.96,8.99],[45.93,8.94],[45.92,8.88],[45.95,8.89]] },
+    { name:"Lago di Como", label:[46.08,9.20], pts:[[46.17,9.40],[46.145,9.305],[46.12,9.28],[46.02,9.24],[45.985,9.225],[45.97,9.19],[45.94,9.13],[45.88,9.13],[45.84,9.075],[45.81,9.085],[45.835,9.105],[45.855,9.12],[45.88,9.15],[45.915,9.16],[45.945,9.19],[45.975,9.245],[45.93,9.28],[45.86,9.37],[45.85,9.38],[45.855,9.395],[45.895,9.335],[45.915,9.32],[45.955,9.305],[46.01,9.285],[46.04,9.30],[46.075,9.305],[46.14,9.37]] },
+    { name:"Lago d'Iseo", label:[45.74,10.16], pts:[[45.83,10.07],[45.80,10.095],[45.76,10.10],[45.72,10.12],[45.68,10.10],[45.655,10.06],[45.665,10.03],[45.70,10.03],[45.74,10.04],[45.78,10.045],[45.815,10.055]] },
+    { name:"Lago d'Idro", label:null, pts:[[45.80,10.52],[45.77,10.53],[45.74,10.51],[45.75,10.49],[45.78,10.495]] },
+    { name:"Lago di Garda", label:[45.64,10.66], pts:[[45.44,10.69],[45.455,10.64],[45.50,10.612],[45.46,10.60],[45.47,10.545],[45.51,10.51],[45.55,10.545],[45.595,10.535],[45.607,10.52],[45.62,10.56],[45.64,10.60],[45.69,10.655],[45.74,10.715],[45.81,10.785],[45.886,10.84],[45.875,10.875],[45.83,10.845],[45.765,10.815],[45.70,10.765],[45.61,10.695],[45.575,10.71],[45.548,10.725],[45.505,10.735]] }
+  ];
+  /* Fronteras aproximadas con Suiza y Austria (Francia queda fuera del mapa). */
+  var BORDERS = [
+    [[45.93,7.3],[45.93,7.87],[45.99,7.98],[46.12,8.05],[46.22,8.15],[46.33,8.28],[46.45,8.42],[46.32,8.50],[46.20,8.62],[46.12,8.70],[46.02,8.84],[45.96,8.87],[45.88,8.94],[45.83,9.03],[45.92,9.07],[46.01,9.03],[46.05,9.10],[46.13,9.17],[46.25,9.24],[46.38,9.28],[46.505,9.33],[46.45,9.43],[46.34,9.51],[46.30,9.60],[46.36,9.72],[46.38,9.90],[46.34,10.03],[46.23,10.14],[46.33,10.19],[46.43,10.12],[46.50,10.05],[46.60,10.17],[46.62,10.28],[46.55,10.43],[46.63,10.47],[46.75,10.45],[46.84,10.47]],
+    [[46.84,10.47],[46.80,10.65],[46.77,10.85],[46.86,11.03],[46.93,11.14],[46.97,11.33],[47.00,11.51],[47.03,11.70],[47.09,11.95],[47.09,12.18],[46.96,12.22],[46.88,12.20],[46.80,12.33],[46.72,12.42],[46.68,12.62],[46.62,12.90],[46.60,13.5]]
+  ];
+  var GEO_LABELS = [
+    { text:"MAR DE LIGURIA", lat:43.72, lon:9.0, views:["all","liguria"] },
+    { text:"ADRIÁTICO", lat:44.62, lon:12.6, rotate:-90, views:["all"] },
+    { text:"SUIZA", lat:46.6, lon:8.85, views:["all"] },
+    { text:"AUSTRIA", lat:46.9, lon:12.6, views:["all"] }
   ];
 
-  /* Costa mediterránea (Alicante → Barcelona → Cap de Creus), continuación de
-     COASTLINE hacia el noreste. Se concatena con COASTLINE al dibujar el mapa
-     (ver renderMap) para que el relleno de tierra/mar siga siendo correcto en
-     todo el contorno, incluida la franja donde el mar queda al este en vez de
-     al sur. */
-  var COASTLINE_EXTRA = [
-    [37.13,-1.85],[37.41,-1.58],[37.60,-0.99],[37.64,-0.72],[37.98,-0.68],
-    [38.35,-0.48],[38.54,-0.12],[38.84,0.11],[39.47,-0.38],[39.99,-0.05],
-    [40.36,0.41],[40.72,0.73],[41.12,1.25],[41.39,2.17],[41.68,2.79],
-    [41.72,2.93],[42.29,3.28]
-  ];
-
-  var CATEGORY_LABELS = { ciudad:"Ciudad", pueblo:"Pueblo", costa:"Costa", naturaleza:"Naturaleza", personalizado:"Punto propio" };
+  var CATEGORY_LABELS = { ciudad:"Ciudad", pueblo:"Pueblo", costa:"Costa", lago:"Lago", naturaleza:"Naturaleza", paso:"Paso de montaña", motor:"Motor", personalizado:"Punto propio" };
+  var CATEGORY_ORDER = ["ciudad","pueblo","costa","lago","naturaleza","paso","motor"];
 
   var PRESETS = [
-    ["Sevilla",37.3891,-5.9845,"ciudad"],["Córdoba",37.8882,-4.7794,"ciudad"],["Granada",37.1773,-3.5986,"ciudad"],
-    ["Málaga",36.7213,-4.4214,"ciudad"],["Cádiz",36.5297,-6.2923,"ciudad"],["Jerez de la Frontera",36.6850,-6.1261,"ciudad"],
-    ["Jaén",37.7796,-3.7849,"ciudad"],["Almería",36.8340,-2.4637,"ciudad"],["Huelva",37.2614,-6.9447,"ciudad"],
-    ["Ronda",36.7420,-5.1660,"pueblo"],["Antequera",37.0184,-4.5610,"pueblo"],["Arcos de la Frontera",36.7515,-5.8095,"pueblo"],
-    ["Grazalema",36.7590,-5.3690,"pueblo"],["Zahara de la Sierra",36.8385,-5.3900,"pueblo"],["Setenil de las Bodegas",36.8636,-5.1799,"pueblo"],
-    ["Vejer de la Frontera",36.2517,-5.9660,"pueblo"],["Baeza",37.9930,-3.4700,"pueblo"],["Úbeda",38.0138,-3.3705,"pueblo"],
-    ["Alhama de Granada",37.0060,-3.9880,"pueblo"],
-    ["Tarifa",36.0143,-5.6044,"costa"],["Marbella",36.5100,-4.8850,"costa"],["Nerja",36.7500,-3.8750,"costa"],
-    ["Cabo de Gata",36.8300,-2.1700,"costa"],["Algeciras",36.1300,-5.4500,"costa"],
-    ["Sierra Nevada (Pradollano)",37.0940,-3.3920,"naturaleza"],["Alpujarras (Trevélez)",36.9000,-3.2670,"naturaleza"],
-    ["Cazorla",37.9130,-2.9670,"naturaleza"],["Doñana (El Rocío)",37.1330,-6.4770,"naturaleza"],
+    ["Milán",45.4642,9.1900,"ciudad"],["Génova",44.4071,8.9347,"ciudad"],["La Spezia",44.1025,9.8240,"ciudad"],
+    ["Pisa (Piazza dei Miracoli)",43.7230,10.3966,"ciudad"],["Lucca",43.8430,10.5079,"ciudad"],["Florencia",43.7700,11.2577,"ciudad"],
+    ["Florencia (Piazzale Michelangelo)",43.7629,11.2650,"ciudad"],["Siena",43.3188,11.3308,"ciudad"],["Bolonia",44.4938,11.3426,"ciudad"],
+    ["Módena",44.6471,10.9252,"ciudad"],["Parma",44.8015,10.3279,"ciudad"],["Mantua",45.1564,10.7914,"ciudad"],
+    ["Verona",45.4390,10.9944,"ciudad"],["Vicenza",45.5455,11.5354,"ciudad"],["Padua",45.4064,11.8768,"ciudad"],
+    ["Venecia",45.4408,12.3155,"ciudad"],["Rávena",44.4184,12.2035,"ciudad"],["Trento",46.0679,11.1211,"ciudad"],
+    ["Bolzano",46.4983,11.3548,"ciudad"],["Merano",46.6713,11.1525,"ciudad"],["Brescia",45.5416,10.2118,"ciudad"],
+    ["Bérgamo (Città Alta)",45.7035,9.6623,"ciudad"],["Como",45.8081,9.0852,"ciudad"],
 
-    ["Murcia",37.9922,-1.1307,"ciudad"],["Cartagena",37.6051,-0.9862,"ciudad"],["Alicante",38.3452,-0.4810,"ciudad"],
-    ["Valencia",39.4699,-0.3763,"ciudad"],["Castellón de la Plana",39.9864,-0.0513,"ciudad"],
-    ["Tarragona",41.1189,1.2445,"ciudad"],["Barcelona",41.3874,2.1686,"ciudad"],["Girona",41.9794,2.8214,"ciudad"],
+    ["San Gimignano",43.4677,11.0432,"pueblo"],["Monteriggioni",43.3903,11.2236,"pueblo"],["Greve in Chianti",43.5847,11.3165,"pueblo"],
+    ["Castellina in Chianti",43.4697,11.2872,"pueblo"],["Volterra",43.4020,10.8615,"pueblo"],["Canazei",46.4769,11.7708,"pueblo"],
+    ["Arabba",46.4968,11.8745,"pueblo"],["Corvara in Badia",46.5500,11.8750,"pueblo"],["Cortina d'Ampezzo",46.5405,12.1357,"pueblo"],
+    ["Ortisei (Val Gardena)",46.5747,11.6717,"pueblo"],["Moena",46.3767,11.6605,"pueblo"],["Cavalese (Val di Fiemme)",46.2917,11.4600,"pueblo"],
+    ["Madonna di Campiglio",46.2297,10.8266,"pueblo"],["Dimaro (pretemporada del Napoli)",46.3259,10.8727,"pueblo"],["Bormio",46.4669,10.3703,"pueblo"],
+    ["Livigno",46.5386,10.1357,"pueblo"],["Storo",45.8490,10.5777,"pueblo"],
 
-    ["Guadalest",38.6650,-0.2380,"pueblo"],["Morella",40.6172,-0.1013,"pueblo"],
+    ["Camogli",44.3491,9.1553,"costa"],["Portofino",44.3033,9.2097,"costa"],["Santa Margherita Ligure",44.3346,9.2117,"costa"],
+    ["Portovenere",44.0506,9.8356,"costa"],["Lerici",44.0757,9.9111,"costa"],["Monterosso al Mare",44.1462,9.6547,"costa"],
+    ["Vernazza",44.1349,9.6838,"costa"],["Corniglia",44.1195,9.7093,"costa"],["Manarola",44.1066,9.7289,"costa"],
+    ["Riomaggiore",44.0993,9.7377,"costa"],["Viareggio",43.8657,10.2513,"costa"],
 
-    ["Águilas",37.4058,-1.5828,"costa"],["La Manga del Mar Menor",37.6333,-0.7167,"costa"],
-    ["Cabo de Palos",37.6367,-0.6997,"costa"],["Torrevieja",37.9785,-0.6820,"costa"],
-    ["Benidorm",38.5411,-0.1225,"costa"],["Dénia",38.8408,0.1057,"costa"],["Peñíscola",40.3600,0.4100,"costa"],
-    ["Sitges",41.2379,1.8057,"costa"],["Tossa de Mar",41.7195,2.9327,"costa"],["Cadaqués",42.2886,3.2769,"costa"],
-    ["Puerto Banús",36.4850,-4.9520,"costa"],["Gibraltar",36.1408,-5.3536,"ciudad"],
+    ["Riva del Garda",45.8858,10.8413,"lago"],["Torbole",45.8716,10.8750,"lago"],["Malcesine",45.7644,10.8091,"lago"],
+    ["Bardolino",45.5480,10.7214,"lago"],["Lazise",45.5050,10.7327,"lago"],["Sirmione",45.4927,10.6080,"lago"],
+    ["Desenzano del Garda",45.4711,10.5379,"lago"],["Salò",45.6072,10.5203,"lago"],["Gardone Riviera (Vittoriale)",45.6224,10.5667,"lago"],
+    ["Limone sul Garda",45.8130,10.7910,"lago"],["Lago d'Idro",45.7780,10.5180,"lago"],["Lovere (Lago d'Iseo)",45.8139,10.0692,"lago"],
+    ["Monte Isola",45.7160,10.0830,"lago"],["Bellagio",45.9870,9.2610,"lago"],["Varenna",46.0106,9.2838,"lago"],
 
-    ["Delta del Ebro",40.7167,0.7333,"naturaleza"],
-    ["Park Güell",41.4145,2.1527,"naturaleza"],["Montjuïc",41.3641,2.1590,"naturaleza"],
-    ["Vélez Blanco",37.6497,-2.0836,"pueblo"],["Lorca",37.6733,-1.7013,"ciudad"],
+    ["Lago di Carezza",46.4096,11.5754,"naturaleza"],["Lago di Braies",46.6944,12.0853,"naturaleza"],["Tre Cime di Lavaredo (camino con peaje)",46.6187,12.3024,"naturaleza"],
+    ["Lago di Misurina",46.5812,12.2539,"naturaleza"],["Seceda (teleférico desde Ortisei)",46.6011,11.7233,"naturaleza"],["Strada della Forra (Tremosine)",45.7697,10.7527,"naturaleza"],
+    ["Cascata del Varone",45.9043,10.8307,"naturaleza"],["Pirámides de Segonzano",46.1680,11.2630,"naturaleza"],
 
-    ["Busot",38.4193,-0.4227,"pueblo"],["Sella",38.5906,-0.2649,"pueblo"],
-    ["Callosa d'en Sarrià",38.6650,-0.1350,"pueblo"],["Altea",38.5990,-0.0510,"costa"],
-    ["Jávea (Xàbia)",38.7897,0.1656,"costa"],["Calpe",38.6447,0.0443,"costa"],
-    ["Coll de Rates",38.7333,-0.1000,"naturaleza"],["Puerto de la Bernia",38.6470,-0.0800,"naturaleza"],
-    ["Cabo de la Nao",38.7290,0.2270,"naturaleza"]
+    ["Passo della Cisa",44.4731,9.9278,"paso"],["Passo della Futa",44.0919,11.2847,"paso"],["Passo della Raticosa",44.1647,11.3589,"paso"],
+    ["Passo dell'Abetone",44.1450,10.6660,"paso"],["Passo Costalunga",46.4009,11.6120,"paso"],["Passo Sella",46.5081,11.7631,"paso"],
+    ["Passo Pordoi (Sass Pordoi)",46.4881,11.8122,"paso"],["Passo Gardena (posible ZTL 2027)",46.5503,11.8078,"paso"],["Passo Campolongo",46.5200,11.8742,"paso"],
+    ["Passo Valparola",46.5433,11.9736,"paso"],["Passo Falzarego",46.5189,12.0094,"paso"],["Passo Giau",46.4825,12.0539,"paso"],
+    ["Passo Fedaia (Marmolada)",46.4535,11.8890,"paso"],["Passo San Pellegrino",46.3793,11.7869,"paso"],["Passo Rolle",46.2966,11.7869,"paso"],
+    ["Passo della Mendola",46.4200,11.2006,"paso"],["Passo del Tonale",46.2626,10.5846,"paso"],["Passo Gavia",46.3445,10.4878,"paso"],
+    ["Passo dello Stelvio",46.5286,10.4531,"paso"],
+
+    ["Maranello (Museo Ferrari)",44.5297,10.8612,"motor"],["Módena (Museo Enzo Ferrari)",44.6547,10.9300,"motor"],["Museo Ducati (Borgo Panigale)",44.5134,11.2735,"motor"],
+    ["Museo Lamborghini (Sant'Agata)",44.6588,11.1263,"motor"],["Circuito de Mugello",43.9975,11.3719,"motor"],["Circuito de Imola",44.3439,11.7167,"motor"]
   ];
 
   var EXPENSE_CATEGORIES = [
@@ -380,10 +518,13 @@
     var c = EXPENSE_CATEGORIES.filter(function(c){return c.id===id;})[0];
     return getComputedStyle(document.documentElement).getPropertyValue(c ? c.varName : "--cat-otros").trim();
   }
-
   function fmtEUR(n){
     n = Number(n)||0;
-    return "€" + n.toLocaleString("es-ES",{maximumFractionDigits:0});
+    return "€" + n.toLocaleString("es-ES",{maximumFractionDigits:0, useGrouping:true});
+  }
+  function fmtInt(n){
+    n = Math.round(Number(n)||0);
+    return n.toLocaleString("es-ES",{maximumFractionDigits:0, useGrouping:true});
   }
   function escapeHtml(s){
     return String(s==null?"":s).replace(/[&<>"']/g, function(c){
@@ -398,150 +539,93 @@
       t = setTimeout(function(){ fn.apply(ctx, args); }, ms);
     };
   }
-  // Crece el textarea de notas para que quepa todo el texto sin barra de
-  // desplazamiento ni espacio vacío de sobra.
   function autoResizeTextarea(el){
     el.style.height = "auto";
     el.style.height = el.scrollHeight + "px";
   }
+  function shortName(name){
+    return String(name||"").split(" — ")[0].split(" (")[0];
+  }
 
-  /* ---------------- example starting itinerary ---------------- */
-  var DEFAULT_TRIP = {
-    tripInfo: { title:"Ruta en moto por el sur de España", subtitle:"El plan de Diego y su compañero de viaje" },
-    days: [
-      { id:"d1", order:100, title:"Alicante ciudad", date:"", notes:"Día a pie / en moto solo para moverte entre puntos, sin salir de la ciudad. Mañana: Castillo de Santa Bárbara (subir por la carretera detrás del castillo, mirador a mitad de camino) y bajar caminando por el Barrio de Santa Cruz. Mediodía: Concatedral de San Nicolás → Ayuntamiento (Plaza del Ayuntamiento) → Mercado Central. Tarde: Explanada de España hasta el puerto, playa del Postiguet y paseo marítimo. Atardecer: Cabo de las Huertas o la Explanada con la luz de la tarde." },
-      { id:"d2", order:200, title:"Ruta de montaña: Guadalest, Coll de Rates y Bernia", date:"", notes:"La ruta mítica de la Costa Blanca en moto. Alicante → Busot → Aigües → Sella (empiezan las curvas buenas). Guadalest — parada obligada, pueblo colgado sobre la roca con el embalse turquesa abajo. Callosa d'en Sarrià → Fuentes del Algar (opcional, pozas). Coll de Rates (entre Parcent y Tárbena) — la carretera de curvas más famosa de la zona, mirador arriba sobre el valle. Opcional si da el día: Puerto de la Bernia (CV-749), más técnica todavía. Bajada a Altea (pueblo blanco y azul, cúpula de cerámica, mirador del casco antiguo) y cierre en Calpe (Peñón de Ifach). Vuelta a Alicante por autovía, o dormir en Altea/Calpe." },
-      { id:"d3", order:300, title:"Costa norte: Jávea y Cabo de la Nao", date:"", notes:"Calpe/Altea → Jávea (Xàbia) — Cabo de la Nao y Cabo de San Antonio tienen la carretera de acantilados más bonita de la Costa Blanca, miradores sobre calas turquesa. Bajada al Portitxol o alguna cala. Dénia — castillo y puerto, buen lugar para comer. Vuelta a Alicante: por el interior (Pego → Vall de Gallinera → Alcoy, más curvas) o por la autovía costera (más directa)." },
-      { id:"d4", order:400, title:"Cartagena (mañana) → Almería (llegada)", date:"", notes:"Cartagena turístico (2-2.5h alcanza): Teatro Romano (museo diseñado por Rafael Moneo, el imprescindible) → Casco histórico / Calle Mayor (modernismo, Casa Cervantes, Casino de Cartagena, Palacio Consistorial) → Castillo de la Concepción (ascensor panorámico, mejor mirador de la ciudad y el puerto) → Muralla Púnica → Paseo Alfonso XIII / puerto antes de salir hacia Almería. Cartagena gastronómico: caldero (arroz con pescado de roca, típico del Mar Menor, buscarlo en el puerto), marinera cartagenera (tapa icónica: rosquilla frita con ensaladilla y anchoa/boquerón), michirones (habas estofadas, típico murciano), Mercado de Santa Florentina para tapeo rápido antes de subir a la moto. Almería turístico: Alcazaba (una de las fortalezas árabes más grandes de España, el imprescindible), Catedral fortificada (poco común), Barrio de la Chanca (casas de colores pegadas al mar), Refugios de la Guerra Civil (túneles); si sobra tiempo al día siguiente, desierto de Tabernas / Mini Hollywood (~30 min). Como se llega de tarde-noche por la ruta larga desde Cartagena, mejor dejar la Alcazaba y el resto para la mañana siguiente con luz y tranquilos, y usar la noche de llegada solo para cenar y caminar el centro. Almería gastronómico: tapeo almeriense (la tapa viene gratis con la bebida — Calle Real y Plaza Flores llenas de bares), gamba roja de Garrucha (en una marisquería), ajo colorao (puré de patata con pimentón y bacalao), migas / trigo picao (plato de pastores), ropa vieja (guiso de garbanzos)." },
-      { id:"d5", order:500, title:"Almería → Málaga (nuevo hub, vía Nerja)", date:"", notes:"Ruta: directo por la A-7 son ~210 km / 2h15, pero con parada en Nerja (Almería → Nerja 1h40, Nerja → Málaga ~50 km / 45 min) queda toda la tarde libre en Málaga. Nerja (imprescindible): Balcón de Europa — mirador icónico sobre el Mediterráneo en pleno centro, parada corta pero obligada. Cuevas de Nerja — cuevas prehistóricas con formaciones espectaculares, a las afueras (~4 km), contar 1h-1h30 si entran. Casco antiguo — calles blancas de la Axarquía, 20-30 min caminando. Opcional: Frigiliana, pueblo blanco a 7 km metido en la sierra, de los más fotogénicos de la Costa del Sol (desvío corto pero suma tiempo). Con Balcón de Europa + casco antiguo + almuerzo alcanza 1h30-2h sin cuevas; con cuevas, sumar otra hora y media. Gastronómico en Nerja: espetos de sardinas (en caña, asados sobre brasas en la playa, el plato más típico de la Costa del Sol) y pescaíto frito, en cualquier chiringuito frente al mar. Llegada a Málaga (tarde/noche): Alcazaba (fortaleza árabe muy bien conservada, con el Teatro Romano a sus pies), Castillo de Gibralfaro (arriba de la Alcazaba, mirador de toda la bahía, se sube en moto por la carretera que rodea el cerro), Calle Larios y Plaza de la Constitución (paseo peatonal, ambiente nocturno), Muelle Uno / puerto (paseo marítimo moderno, buena zona para cenar con vista al mar); Museo Picasso queda de opción para la mañana antes de salir hacia Marbella. Gastronómico en Málaga: espetos otra vez en La Malagueta o El Palo, boquerones en vinagre, Mercado Central de Atarazanas (tapeo variado, vitral de hierro), y vino dulce de Málaga (D.O. local) para cerrar la noche." },
-      { id:"d6", order:600, title:"Marbella + Puerto Banús", date:"", notes:"Ruta: Málaga → Marbella ~60 km / 50 min por autovía (A-7); si quieren algo más pintoresco, tramos de la vieja carretera de la costa pasando por Fuengirola y Benalmádena (más tiempo, más paisaje de pueblo costero). Turístico — Marbella: Casco antiguo / Plaza de los Naranjos (el corazón del pueblo, calles blancas con flores, se camina en 1-1.5h tranquilo), Iglesia de la Encarnación (justo en la plaza, pasada rápida), Paseo Marítimo / Playa de la Fontanilla. Puerto Banús (7 km de Marbella) — la marina de los superyates, ambiente de lujo, una hora alcanza viendo barcos y tiendas salvo que quieran ir de compras. Si sobra la tarde: Paseo de la Alameda, buena sombra y bancos de cerámica. Gastronómico — Marbella: espetos en algún chiringuito de playa, pescaíto frito y boquerones (misma tradición costera que Málaga); Puerto Banús tiene restaurantes de nivel alto (y precios altos) para una cena especial de mitad de viaje; alternativa más económica, tapeo tradicional andaluz en el casco antiguo." },
-      { id:"d7", order:700, title:"Ronda + Gibraltar", date:"", notes:"Día largo (~300 km entre carretera de montaña y autovía), conviene salir temprano. Ruta: Málaga → Ronda directo (~100 km por A-357/A-397, 1h30) o repitiendo el tramo Marbella-Ronda por la A-397 — una de las carreteras de montaña más espectaculares de España en moto, muchísimas curvas por la Sierra de las Nieves, ~55 km pero contar 1h-1h15. Ronda → Gibraltar: ~105 km, 1h30. Gibraltar → Málaga (vuelta al hub): ~130 km, 1h30-2h. Turístico — Ronda (2-2.5h alcanza): Puente Nuevo (sobre el Tajo de Ronda, la imagen más icónica, varios miradores), Plaza de Toros de Ronda (de las más antiguas de España, cuna de la tauromaquia moderna, con museo), Casco antiguo / La Ciudad (barrio histórico al otro lado del puente, calles empedradas y vistas al tajo), Mirador de Ronda / Alameda del Tajo. Gastronómico — Ronda: rabo de toro (estofado, el plato más típico, en cualquier restaurante del casco antiguo) y queso payoyo (queso de cabra de la sierra) — buen momento para el almuerzo fuerte antes de Gibraltar. Turístico — Gibraltar: Peñón de Gibraltar / Upper Rock (teleférico o en moto, vistas a dos continentes en días claros), Cueva de San Miguel / St Michael's Cave (formaciones espectaculares), los monos de Gibraltar (macacos de Berbería sueltos en la zona alta, cuidado con mochilas y bolsas), Main Street (ambiente muy británico, cabinas rojas, pubs, duty-free), y el cruce de la pista del aeropuerto (la carretera de entrada la cruza literalmente, foto obligada, a veces toca esperar si aterriza un avión). Gastronómico — Gibraltar: fish and chips y comida de pub británico (contraste con el resto del viaje andaluz), calentita (torta de garbanzo local, tipo farinata), y té con scones si quieren la experiencia inglesa completa antes de volver a España." },
-      { id:"d8", order:800, title:"Málaga → Granada (Alhambra) → Vélez Blanco", date:"", notes:"Ruta: Málaga → Granada, 130 km, 1h30-1h45 por A-92. Después de la visita, Granada → Vélez Blanco: ~145 km, 1h45-2h (desvío corto de la A-92N hacia la Sierra de María-Los Vélez). Día total: ~275 km. Turístico — Granada: Alhambra y Generalife (el imprescindible del día, mínimo 3 horas entre los Palacios Nazaríes, la Alcazaba y los jardines del Generalife — entradas con reserva anticipada, no se compran el mismo día), Albaicín (barrio árabe de calles empedradas, ideal para caminar bajando desde la Alhambra), Mirador de San Nicolás (la vista clásica de la Alhambra con Sierra Nevada de fondo, mejor al mediodía o media tarde antes de salir hacia Vélez Blanco — el atardecer real no da el tiempo), Sacromonte (barrio de cuevas, cuna del flamenco, si queda tiempo extra). Gastronómico — Granada: tapeo gratis (cada bebida viene con tapa incluida, ideal para un almuerzo rápido recorriendo un par de bares antes de subir a la moto), remojón granadino (ensalada de bacalao, naranja y aceitunas), piononos (dulce típico de Santa Fe, para llevar de postre o snack de ruta). Turístico — Vélez Blanco (llegada de tarde): Castillo de los Fajardo (castillo renacentista sobre la colina que domina el pueblo, el motivo principal de la parada, vistas a la Sierra de María-Los Vélez), casco antiguo (pueblo pequeño y tranquilo, buen contraste después del ajetreo de Granada), Cueva de los Letreros (arte rupestre prehistórico cerca del pueblo, Patrimonio de la Humanidad — Arte Rupestre del Arco Mediterráneo, para quien le interese algo distinto si llegan con luz). Gastronómico — Vélez Blanco: gachamiga (plato de pastores a base de harina y aceite, típico de esta comarca serrana del interior almeriense), migas (versión de sierra, distinta a la costera), cordero segureño (cordero de la zona, muy reconocido, buena opción para la cena de cierre del día)." },
-      { id:"d9", order:900, title:"Vélez Blanco → Alicante (cierre del viaje)", date:"", notes:"Ruta: ~195 km, 2h15-2h30 por A-92N/A-7 hasta Alicante. Día corto y tranquilo para cerrar el círculo del hub. Si quieren partirlo con una parada, Lorca queda a mitad de camino (~55 km de Vélez Blanco) y tiene su propio castillo, la Fortaleza del Sol, más la Colegiata de San Patricio en el centro — opcional, el día ya de por sí es corto, pero suma variedad si no quieren llegar demasiado temprano a Alicante. Gastronómico — Lorca (si paran): paparajotes (postre típico murciano, hoja de limonero rebozada y frita, cubierta de azúcar y canela), zarangollo (revuelto de calabacín y cebolla, plato casero típico de la huerta murciana). Cierre en Alicante: después de 9 días de ruta, para la cena de cierre en el hub, algo bien representativo de la zona que arrancó el viaje — un arroz a banda o un arroz del senyoret en algún restaurante del centro o cerca del puerto, el cierre perfecto para volver al punto de partida." },
-      { id:"d10", order:1000, title:"Barcelona (centro histórico + Gaudí)", date:"", notes:"Después de entregar la moto, extensión en bus/tren hasta Barcelona. Turístico: Sagrada Familia (el imprescindible absoluto de la ciudad, reservar entrada con antelación porque se agota rápido igual que la Alhambra), Passeig de Gràcia (Casa Batlló y La Pedrera / Casa Milà de Gaudí, se puede ver la fachada sin entrar si el presupuesto o el tiempo aprieta), Barri Gòtic (el casco antiguo medieval, Catedral de Barcelona, calles estrechas con mucha historia), Las Ramblas y el Mercat de la Boqueria (el paseo más icónico de la ciudad y el mercado gastronómico más famoso, ideal para el almuerzo), Barceloneta al atardecer (playa urbana, buen cierre de día con vista al mar). Gastronómico: tapeo variado directo en los puestos del Mercat de la Boqueria (de lo mejor para probar varias cosas), pa amb tomàquet (pan con tomate, mantequilla y aceite, la base de cualquier comida catalana), fideuà (como la paella pero con fideos en vez de arroz, típico de la costa catalana), vermut (la tradición del vermut de mediodía es muy propia de Barcelona, buena para el almuerzo si cae en fin de semana)." },
-      { id:"d11", order:1100, title:"Barcelona (Gaudí en las alturas + Montjuïc)", date:"", notes:"Turístico: Park Güell (el parque de Gaudí con las famosas terrazas de mosaico y vista panorámica de la ciudad, reservar entrada para la zona monumental con antelación también), Montjuïc (se sube en teleférico o funicular, con el Castillo de Montjuïc arriba — otro mirador espectacular de la ciudad y el puerto — y el Museu Nacional d'Art de Catalunya / MNAC si interesa el arte), Font Màgica de Montjuïc (el espectáculo de agua, luz y música, funciona de noche en temporada, buen cierre para la última noche en la ciudad antes de tomar el bus); si son fanáticos del fútbol, el Camp Nou queda cerca, aunque compite con el tiempo del resto del día. Gastronómico: croquetas y tapas en cualquier bar del Eixample o Gràcia (buena zona para cenar antes del bus nocturno), crema catalana (el postre típico catalán, versión local del flan/crème brûlée), xocolata amb xurros (para despedirse con algo dulce antes de subir al bus de vuelta)." }
-    ],
-    stops: [
-      { id:"s1", order:100, name:"Alicante", lat:38.3452, lon:-0.4810, category:"ciudad", dayId:"d1" },
-      { id:"s2", order:200, name:"Busot", lat:38.4193, lon:-0.4227, category:"pueblo", dayId:"d2" },
-      { id:"s3", order:300, name:"Guadalest", lat:38.6650, lon:-0.2380, category:"pueblo", dayId:"d2" },
-      { id:"s4", order:400, name:"Coll de Rates", lat:38.7333, lon:-0.1000, category:"naturaleza", dayId:"d2" },
-      { id:"s5", order:500, name:"Altea", lat:38.5990, lon:-0.0510, category:"costa", dayId:"d2" },
-      { id:"s6", order:600, name:"Calpe", lat:38.6447, lon:0.0443, category:"costa", dayId:"d2" },
-      { id:"s7", order:700, name:"Jávea (Xàbia)", lat:38.7897, lon:0.1656, category:"costa", dayId:"d3" },
-      { id:"s8", order:800, name:"Cabo de la Nao", lat:38.7290, lon:0.2270, category:"naturaleza", dayId:"d3" },
-      { id:"s9", order:900, name:"Dénia", lat:38.8408, lon:0.1057, category:"costa", dayId:"d3" },
-      { id:"s10", order:1000, name:"Cartagena", lat:37.6051, lon:-0.9862, category:"ciudad", dayId:"d4" },
-      { id:"s11", order:1100, name:"Almería", lat:36.8340, lon:-2.4637, category:"ciudad", dayId:"d4" },
-      { id:"s12", order:1200, name:"Nerja", lat:36.7500, lon:-3.8750, category:"costa", dayId:"d5" },
-      { id:"s13", order:1300, name:"Málaga", lat:36.7213, lon:-4.4214, category:"ciudad", dayId:"d5" },
-      { id:"s14", order:1400, name:"Marbella", lat:36.5100, lon:-4.8850, category:"costa", dayId:"d6" },
-      { id:"s15", order:1500, name:"Puerto Banús", lat:36.4850, lon:-4.9520, category:"costa", dayId:"d6" },
-      { id:"s16", order:1600, name:"Ronda", lat:36.7420, lon:-5.1660, category:"pueblo", dayId:"d7" },
-      { id:"s17", order:1700, name:"Gibraltar", lat:36.1408, lon:-5.3536, category:"ciudad", dayId:"d7" },
-      { id:"s18", order:1800, name:"Granada", lat:37.1773, lon:-3.5986, category:"ciudad", dayId:"d8" },
-      { id:"s19", order:1900, name:"Vélez Blanco", lat:37.6497, lon:-2.0836, category:"pueblo", dayId:"d8" },
-      { id:"s20", order:2000, name:"Lorca", lat:37.6733, lon:-1.7013, category:"ciudad", dayId:"d9" },
-      { id:"s21", order:2100, name:"Alicante (regreso — entrega de la moto)", lat:38.3452, lon:-0.4810, category:"ciudad", dayId:"d9" },
-      { id:"s22", order:2200, name:"Barcelona", lat:41.3874, lon:2.1686, category:"ciudad", dayId:"d10" }
-    ],
-    expenses: [
-      { id:"e1", order:100, dayId:"d1", concept:"Alojamiento en Alicante (ejemplo)", category:"alojamiento", amount:50 },
-      { id:"e2", order:200, dayId:"d1", concept:"Comidas (ejemplo)", category:"comida", amount:25 },
-      { id:"e3", order:300, dayId:"d2", concept:"Gasolina (ejemplo)", category:"transporte", amount:20 },
-      { id:"e4", order:400, dayId:"d2", concept:"Alojamiento en Calpe/Altea (ejemplo)", category:"alojamiento", amount:55 },
-      { id:"e5", order:500, dayId:"d2", concept:"Comidas (ejemplo)", category:"comida", amount:28 },
-      { id:"e6", order:600, dayId:"d3", concept:"Gasolina (ejemplo)", category:"transporte", amount:18 },
-      { id:"e7", order:700, dayId:"d3", concept:"Comidas (ejemplo)", category:"comida", amount:26 },
-      { id:"e8", order:800, dayId:"d4", concept:"Gasolina (ejemplo)", category:"transporte", amount:22 },
-      { id:"e9", order:900, dayId:"d4", concept:"Alojamiento en Almería (ejemplo)", category:"alojamiento", amount:50 },
-      { id:"e10", order:1000, dayId:"d4", concept:"Comidas (ejemplo)", category:"comida", amount:30 },
-      { id:"e11", order:1100, dayId:"d5", concept:"Gasolina (ejemplo)", category:"transporte", amount:20 },
-      { id:"e12", order:1200, dayId:"d5", concept:"Alojamiento en Málaga (ejemplo)", category:"alojamiento", amount:60 },
-      { id:"e13", order:1300, dayId:"d5", concept:"Comidas (ejemplo)", category:"comida", amount:32 },
-      { id:"e14", order:1400, dayId:"d6", concept:"Gasolina (ejemplo)", category:"transporte", amount:16 },
-      { id:"e15", order:1500, dayId:"d6", concept:"Comidas (ejemplo)", category:"comida", amount:35 },
-      { id:"e16", order:1600, dayId:"d7", concept:"Gasolina (ejemplo)", category:"transporte", amount:26 },
-      { id:"e17", order:1700, dayId:"d7", concept:"Teleférico Peñón de Gibraltar (ejemplo)", category:"actividades", amount:20 },
-      { id:"e18", order:1800, dayId:"d7", concept:"Comidas (ejemplo)", category:"comida", amount:30 },
-      { id:"e19", order:1900, dayId:"d8", concept:"Entrada Alhambra (ejemplo)", category:"actividades", amount:19 },
-      { id:"e20", order:2000, dayId:"d8", concept:"Gasolina (ejemplo)", category:"transporte", amount:24 },
-      { id:"e21", order:2100, dayId:"d8", concept:"Alojamiento en Vélez Blanco (ejemplo)", category:"alojamiento", amount:45 },
-      { id:"e22", order:2200, dayId:"d8", concept:"Comidas (ejemplo)", category:"comida", amount:28 },
-      { id:"e23", order:2300, dayId:"d9", concept:"Gasolina (ejemplo)", category:"transporte", amount:20 },
-      { id:"e24", order:2400, dayId:"d9", concept:"Cena de cierre en Alicante (ejemplo)", category:"comida", amount:35 },
-      { id:"e25", order:2500, dayId:"d10", concept:"Bus/tren Alicante → Barcelona (ejemplo)", category:"transporte", amount:45 },
-      { id:"e26", order:2600, dayId:"d10", concept:"Entrada Sagrada Familia (ejemplo)", category:"actividades", amount:26 },
-      { id:"e27", order:2700, dayId:"d10", concept:"Alojamiento en Barcelona (ejemplo)", category:"alojamiento", amount:65 },
-      { id:"e28", order:2800, dayId:"d10", concept:"Comidas (ejemplo)", category:"comida", amount:32 },
-      { id:"e29", order:2900, dayId:"d11", concept:"Entrada Park Güell (ejemplo)", category:"actividades", amount:10 },
-      { id:"e30", order:3000, dayId:"d11", concept:"Teleférico/funicular Montjuïc (ejemplo)", category:"actividades", amount:14 },
-      { id:"e31", order:3100, dayId:"d11", concept:"Alojamiento en Barcelona (ejemplo)", category:"alojamiento", amount:65 },
-      { id:"e32", order:3200, dayId:"d11", concept:"Comidas (ejemplo)", category:"comida", amount:34 }
-    ]
-  };
+  /* ---------------- negrilla en las notas del día ----------------
+     Las notas se guardan como texto plano con marcadores **así** para la negrilla. Se
+     escapa el texto antes de aplicar el reemplazo, así que nunca se interpreta HTML. */
+  function renderNoteView(text){
+    var t = text || "";
+    if (!t.trim()){
+      return '<span class="day-notes-empty">Notas de la etapa: carreteras, paradas, kilómetros…</span>';
+    }
+    var esc = escapeHtml(t);
+    esc = esc.replace(/\*\*([^\n*]+?)\*\*/g, "<b>$1</b>");
+    return esc;
+  }
+  function enterNoteEdit(box){
+    if (!box) return;
+    box.classList.add("editing");
+    var ta = box.querySelector(".day-notes");
+    autoResizeTextarea(ta);
+    ta.focus();
+    var len = ta.value.length;
+    try{ ta.setSelectionRange(len, len); }catch(e){}
+  }
+  function toggleBoldSelection(ta){
+    var start = ta.selectionStart, end = ta.selectionEnd;
+    var val = ta.value;
+    if (start === end){
+      ta.value = val.slice(0,start) + "****" + val.slice(end);
+      ta.selectionStart = ta.selectionEnd = start + 2;
+    } else {
+      var selected = val.slice(start, end);
+      var isBold = selected.length >= 4 && selected.slice(0,2) === "**" && selected.slice(-2) === "**";
+      var replaced = isBold ? selected.slice(2,-2) : "**" + selected + "**";
+      ta.value = val.slice(0,start) + replaced + val.slice(end);
+      ta.selectionStart = start;
+      ta.selectionEnd = start + replaced.length;
+    }
+    autoResizeTextarea(ta);
+    ta.focus();
+    ta.dispatchEvent(new Event("input", { bubbles:true }));
+  }
 
-  /* Marcador de datos exportados: la página en vivo de Claude sustituye esta
-     línea (texto exacto, ver exportHtmlBtn allá) por el viaje actual antes de
-     ofrecer la descarga. Sin sustituir, vale null y esta página arranca con
-     lo que haya en el almacenamiento local del navegador (o el ejemplo, si
-     no hay nada guardado todavía). */
-  var EXPORTED_TRIP_DATA = /*@TRIP_DATA_START@*/{"tripInfo":{"startDate":"2027-07-09","subtitle":"El plan de Diego y su compañero de viaje","title":"Ruta en moto por el sur de España"},"days":[{"id":"d1","date":"","notes":"Día a pie / en moto solo para moverte entre puntos, sin salir de la ciudad. Mañana: Castillo de Santa Bárbara (subir por la carretera detrás del castillo, mirador a mitad de camino) y bajar caminando por el Barrio de Santa Cruz. Mediodía: Concatedral de San Nicolás → Ayuntamiento (Plaza del Ayuntamiento) → Mercado Central. Tarde: Explanada de España hasta el puerto, playa del Postiguet y paseo marítimo. Atardecer: Cabo de las Huertas o la Explanada con la luz de la tarde.","order":100,"title":"Alicante ciudad"},{"id":"d2","date":"","notes":"La ruta mítica de la Costa Blanca en moto. Alicante → Busot → Aigües → Sella (empiezan las curvas buenas). Guadalest — parada obligada, pueblo colgado sobre la roca con el embalse turquesa abajo. Callosa d'en Sarrià → Fuentes del Algar (opcional, pozas). Coll de Rates (entre Parcent y Tárbena) — la carretera de curvas más famosa de la zona, mirador arriba sobre el valle. Opcional si da el día: Puerto de la Bernia (CV-749), más técnica todavía. Bajada a Altea (pueblo blanco y azul, cúpula de cerámica, mirador del casco antiguo) y cierre en Calpe (Peñón de Ifach). Vuelta a Alicante por autovía, o dormir en Altea/Calpe.","order":200,"title":"Ruta de montaña: Guadalest, Coll de Rates y Bernia"},{"id":"d3","date":"","notes":"Calpe/Altea → Jávea (Xàbia) — Cabo de la Nao y Cabo de San Antonio tienen la carretera de acantilados más bonita de la Costa Blanca, miradores sobre calas turquesa. Bajada al Portitxol o alguna cala. Dénia — castillo y puerto, buen lugar para comer. Vuelta a Alicante: por el interior (Pego → Vall de Gallinera → Alcoy, más curvas) o por la autovía costera (más directa).","order":300,"title":"Costa norte: Jávea y Cabo de la Nao"},{"id":"d4","date":"","notes":"Cartagena turístico (2-2.5h alcanza): Teatro Romano (museo diseñado por Rafael Moneo, el imprescindible) → Casco histórico / Calle Mayor (modernismo, Casa Cervantes, Casino de Cartagena, Palacio Consistorial) → Castillo de la Concepción (ascensor panorámico, mejor mirador de la ciudad y el puerto) → Muralla Púnica → Paseo Alfonso XIII / puerto antes de salir hacia Almería. Cartagena gastronómico: caldero (arroz con pescado de roca, típico del Mar Menor, buscarlo en el puerto), marinera cartagenera (tapa icónica: rosquilla frita con ensaladilla y anchoa/boquerón), michirones (habas estofadas, típico murciano), Mercado de Santa Florentina para tapeo rápido antes de subir a la moto. Almería turístico: Alcazaba (una de las fortalezas árabes más grandes de España, el imprescindible), Catedral fortificada (poco común), Barrio de la Chanca (casas de colores pegadas al mar), Refugios de la Guerra Civil (túneles); si sobra tiempo al día siguiente, desierto de Tabernas / Mini Hollywood (~30 min). Como se llega de tarde-noche por la ruta larga desde Cartagena, mejor dejar la Alcazaba y el resto para la mañana siguiente con luz y tranquilos, y usar la noche de llegada solo para cenar y caminar el centro. Almería gastronómico: tapeo almeriense (la tapa viene gratis con la bebida — Calle Real y Plaza Flores llenas de bares), gamba roja de Garrucha (en una marisquería), ajo colorao (puré de patata con pimentón y bacalao), migas / trigo picao (plato de pastores), ropa vieja (guiso de garbanzos).","order":400,"title":"Cartagena (mañana) → Almería (llegada)"},{"id":"d5","date":"","notes":"Ruta: directo por la A-7 son ~210 km / 2h15, pero con parada en Nerja (Almería → Nerja 1h40, Nerja → Málaga ~50 km / 45 min) queda toda la tarde libre en Málaga. Nerja (imprescindible): Balcón de Europa — mirador icónico sobre el Mediterráneo en pleno centro, parada corta pero obligada. Cuevas de Nerja — cuevas prehistóricas con formaciones espectaculares, a las afueras (~4 km), contar 1h-1h30 si entran. Casco antiguo — calles blancas de la Axarquía, 20-30 min caminando. Opcional: Frigiliana, pueblo blanco a 7 km metido en la sierra, de los más fotogénicos de la Costa del Sol (desvío corto pero suma tiempo). Con Balcón de Europa + casco antiguo + almuerzo alcanza 1h30-2h sin cuevas; con cuevas, sumar otra hora y media. Gastronómico en Nerja: espetos de sardinas (en caña, asados sobre brasas en la playa, el plato más típico de la Costa del Sol) y pescaíto frito, en cualquier chiringuito frente al mar. Llegada a Málaga (tarde/noche): Alcazaba (fortaleza árabe muy bien conservada, con el Teatro Romano a sus pies), Castillo de Gibralfaro (arriba de la Alcazaba, mirador de toda la bahía, se sube en moto por la carretera que rodea el cerro), Calle Larios y Plaza de la Constitución (paseo peatonal, ambiente nocturno), Muelle Uno / puerto (paseo marítimo moderno, buena zona para cenar con vista al mar); Museo Picasso queda de opción para la mañana antes de salir hacia Marbella. Gastronómico en Málaga: espetos otra vez en La Malagueta o El Palo, boquerones en vinagre, Mercado Central de Atarazanas (tapeo variado, vitral de hierro), y vino dulce de Málaga (D.O. local) para cerrar la noche.","order":500,"title":"Almería → Málaga (nuevo hub, vía Nerja)"},{"id":"d6","date":"","notes":"Ruta: Málaga → Marbella ~60 km / 50 min por autovía (A-7); si quieren algo más pintoresco, tramos de la vieja carretera de la costa pasando por Fuengirola y Benalmádena (más tiempo, más paisaje de pueblo costero). Turístico — Marbella: Casco antiguo / Plaza de los Naranjos (el corazón del pueblo, calles blancas con flores, se camina en 1-1.5h tranquilo), Iglesia de la Encarnación (justo en la plaza, pasada rápida), Paseo Marítimo / Playa de la Fontanilla. Puerto Banús (7 km de Marbella) — la marina de los superyates, ambiente de lujo, una hora alcanza viendo barcos y tiendas salvo que quieran ir de compras. Si sobra la tarde: Paseo de la Alameda, buena sombra y bancos de cerámica. Gastronómico — Marbella: espetos en algún chiringuito de playa, pescaíto frito y boquerones (misma tradición costera que Málaga); Puerto Banús tiene restaurantes de nivel alto (y precios altos) para una cena especial de mitad de viaje; alternativa más económica, tapeo tradicional andaluz en el casco antiguo.","order":600,"title":"Marbella + Puerto Banús"},{"id":"d7","date":"","notes":"Día largo (~300 km entre carretera de montaña y autovía), conviene salir temprano. Ruta: Málaga → Ronda directo (~100 km por A-357/A-397, 1h30) o repitiendo el tramo Marbella-Ronda por la A-397 — una de las carreteras de montaña más espectaculares de España en moto, muchísimas curvas por la Sierra de las Nieves, ~55 km pero contar 1h-1h15. Ronda → Gibraltar: ~105 km, 1h30. Gibraltar → Málaga (vuelta al hub): ~130 km, 1h30-2h. Turístico — Ronda (2-2.5h alcanza): Puente Nuevo (sobre el Tajo de Ronda, la imagen más icónica, varios miradores), Plaza de Toros de Ronda (de las más antiguas de España, cuna de la tauromaquia moderna, con museo), Casco antiguo / La Ciudad (barrio histórico al otro lado del puente, calles empedradas y vistas al tajo), Mirador de Ronda / Alameda del Tajo. Gastronómico — Ronda: rabo de toro (estofado, el plato más típico, en cualquier restaurante del casco antiguo) y queso payoyo (queso de cabra de la sierra) — buen momento para el almuerzo fuerte antes de Gibraltar. Turístico — Gibraltar: Peñón de Gibraltar / Upper Rock (teleférico o en moto, vistas a dos continentes en días claros), Cueva de San Miguel / St Michael's Cave (formaciones espectaculares), los monos de Gibraltar (macacos de Berbería sueltos en la zona alta, cuidado con mochilas y bolsas), Main Street (ambiente muy británico, cabinas rojas, pubs, duty-free), y el cruce de la pista del aeropuerto (la carretera de entrada la cruza literalmente, foto obligada, a veces toca esperar si aterriza un avión). Gastronómico — Gibraltar: fish and chips y comida de pub británico (contraste con el resto del viaje andaluz), calentita (torta de garbanzo local, tipo farinata), y té con scones si quieren la experiencia inglesa completa antes de volver a España.","order":700,"title":"Ronda + Gibraltar"},{"id":"d8","date":"","notes":"Ruta: Málaga → Granada, 130 km, 1h30-1h45 por A-92. Después de la visita, Granada → Vélez Blanco: ~145 km, 1h45-2h (desvío corto de la A-92N hacia la Sierra de María-Los Vélez). Día total: ~275 km. Turístico — Granada: Alhambra y Generalife (el imprescindible del día, mínimo 3 horas entre los Palacios Nazaríes, la Alcazaba y los jardines del Generalife — entradas con reserva anticipada, no se compran el mismo día), Albaicín (barrio árabe de calles empedradas, ideal para caminar bajando desde la Alhambra), Mirador de San Nicolás (la vista clásica de la Alhambra con Sierra Nevada de fondo, mejor al mediodía o media tarde antes de salir hacia Vélez Blanco — el atardecer real no da el tiempo), Sacromonte (barrio de cuevas, cuna del flamenco, si queda tiempo extra). Gastronómico — Granada: tapeo gratis (cada bebida viene con tapa incluida, ideal para un almuerzo rápido recorriendo un par de bares antes de subir a la moto), remojón granadino (ensalada de bacalao, naranja y aceitunas), piononos (dulce típico de Santa Fe, para llevar de postre o snack de ruta). Turístico — Vélez Blanco (llegada de tarde): Castillo de los Fajardo (castillo renacentista sobre la colina que domina el pueblo, el motivo principal de la parada, vistas a la Sierra de María-Los Vélez), casco antiguo (pueblo pequeño y tranquilo, buen contraste después del ajetreo de Granada), Cueva de los Letreros (arte rupestre prehistórico cerca del pueblo, Patrimonio de la Humanidad — Arte Rupestre del Arco Mediterráneo, para quien le interese algo distinto si llegan con luz). Gastronómico — Vélez Blanco: gachamiga (plato de pastores a base de harina y aceite, típico de esta comarca serrana del interior almeriense), migas (versión de sierra, distinta a la costera), cordero segureño (cordero de la zona, muy reconocido, buena opción para la cena de cierre del día).","order":800,"title":"Málaga → Granada (Alhambra) → Vélez Blanco"},{"id":"d9","date":"","notes":"Ruta: ~195 km, 2h15-2h30 por A-92N/A-7 hasta Alicante. Día corto y tranquilo para cerrar el círculo del hub. Si quieren partirlo con una parada, Lorca queda a mitad de camino (~55 km de Vélez Blanco) y tiene su propio castillo, la Fortaleza del Sol, más la Colegiata de San Patricio en el centro — opcional, el día ya de por sí es corto, pero suma variedad si no quieren llegar demasiado temprano a Alicante. Gastronómico — Lorca (si paran): paparajotes (postre típico murciano, hoja de limonero rebozada y frita, cubierta de azúcar y canela), zarangollo (revuelto de calabacín y cebolla, plato casero típico de la huerta murciana). Cierre en Alicante: después de 9 días de ruta, para la cena de cierre en el hub, algo bien representativo de la zona que arrancó el viaje — un arroz a banda o un arroz del senyoret en algún restaurante del centro o cerca del puerto, el cierre perfecto para volver al punto de partida.","order":900,"title":"Vélez Blanco → Alicante (cierre del viaje)"},{"id":"d10","date":"","notes":"Después de entregar la moto, extensión en bus/tren hasta Barcelona. Turístico: Sagrada Familia (el imprescindible absoluto de la ciudad, reservar entrada con antelación porque se agota rápido igual que la Alhambra), Passeig de Gràcia (Casa Batlló y La Pedrera / Casa Milà de Gaudí, se puede ver la fachada sin entrar si el presupuesto o el tiempo aprieta), Barri Gòtic (el casco antiguo medieval, Catedral de Barcelona, calles estrechas con mucha historia), Las Ramblas y el Mercat de la Boqueria (el paseo más icónico de la ciudad y el mercado gastronómico más famoso, ideal para el almuerzo), Barceloneta al atardecer (playa urbana, buen cierre de día con vista al mar). Gastronómico: tapeo variado directo en los puestos del Mercat de la Boqueria (de lo mejor para probar varias cosas), pa amb tomàquet (pan con tomate, mantequilla y aceite, la base de cualquier comida catalana), fideuà (como la paella pero con fideos en vez de arroz, típico de la costa catalana), vermut (la tradición del vermut de mediodía es muy propia de Barcelona, buena para el almuerzo si cae en fin de semana).","order":1000,"title":"Barcelona (centro histórico + Gaudí)"},{"id":"d11","date":"","notes":"Turístico: Park Güell (el parque de Gaudí con las famosas terrazas de mosaico y vista panorámica de la ciudad, reservar entrada para la zona monumental con antelación también), Montjuïc (se sube en teleférico o funicular, con el Castillo de Montjuïc arriba — otro mirador espectacular de la ciudad y el puerto — y el Museu Nacional d'Art de Catalunya / MNAC si interesa el arte), Font Màgica de Montjuïc (el espectáculo de agua, luz y música, funciona de noche en temporada, buen cierre para la última noche en la ciudad antes de tomar el bus); si son fanáticos del fútbol, el Camp Nou queda cerca, aunque compite con el tiempo del resto del día. Gastronómico: croquetas y tapas en cualquier bar del Eixample o Gràcia (buena zona para cenar antes del bus nocturno), crema catalana (el postre típico catalán, versión local del flan/crème brûlée), xocolata amb xurros (para despedirse con algo dulce antes de subir al bus de vuelta).","order":1100,"title":"Barcelona (Gaudí en las alturas + Montjuïc)"}],"stops":[{"id":"s1","category":"ciudad","dayId":"d1","lat":38.3452,"lon":-0.481,"name":"Alicante","order":100},{"id":"s2","category":"pueblo","dayId":"d2","lat":38.4193,"lon":-0.4227,"name":"Busot","order":200},{"id":"s3","category":"pueblo","dayId":"d2","lat":38.665,"lon":-0.238,"name":"Guadalest","order":300},{"id":"s4","category":"naturaleza","dayId":"d2","lat":38.7333,"lon":-0.1,"name":"Coll de Rates","order":400},{"id":"s5","category":"costa","dayId":"d2","lat":38.599,"lon":-0.051,"name":"Altea","order":500},{"id":"s6","category":"costa","dayId":"d2","lat":38.6447,"lon":0.0443,"name":"Calpe","order":600},{"id":"s7","category":"costa","dayId":"d3","lat":38.7897,"lon":0.1656,"name":"Jávea (Xàbia)","order":700},{"id":"s8","category":"naturaleza","dayId":"d3","lat":38.729,"lon":0.227,"name":"Cabo de la Nao","order":800},{"id":"s9","category":"costa","dayId":"d3","lat":38.8408,"lon":0.1057,"name":"Dénia","order":900},{"id":"s10","category":"ciudad","dayId":"d4","lat":37.6051,"lon":-0.9862,"name":"Cartagena","order":1000},{"id":"s11","category":"ciudad","dayId":"d4","lat":36.834,"lon":-2.4637,"name":"Almería","order":1100},{"id":"s12","category":"costa","dayId":"d5","lat":36.75,"lon":-3.875,"name":"Nerja","order":1200},{"id":"s13","category":"ciudad","dayId":"d5","lat":36.7213,"lon":-4.4214,"name":"Málaga","order":1300},{"id":"s14","category":"costa","dayId":"d6","lat":36.51,"lon":-4.885,"name":"Marbella","order":1400},{"id":"s15","category":"costa","dayId":"d6","lat":36.485,"lon":-4.952,"name":"Puerto Banús","order":1500},{"id":"s16","category":"pueblo","dayId":"d7","lat":36.742,"lon":-5.166,"name":"Ronda","order":1600},{"id":"s17","category":"ciudad","dayId":"d7","lat":36.1408,"lon":-5.3536,"name":"Gibraltar","order":1700},{"id":"s18","category":"ciudad","dayId":"d8","lat":37.1773,"lon":-3.5986,"name":"Granada","order":1800},{"id":"s19","category":"pueblo","dayId":"d8","lat":37.6497,"lon":-2.0836,"name":"Vélez Blanco","order":1900},{"id":"s20","category":"ciudad","dayId":"d9","lat":37.6733,"lon":-1.7013,"name":"Lorca","order":2000},{"id":"s21","category":"ciudad","dayId":"d9","lat":38.3452,"lon":-0.481,"name":"Alicante (regreso — entrega de la moto)","order":2100},{"id":"s22","category":"ciudad","dayId":"d10","lat":41.3874,"lon":2.1686,"name":"Barcelona","order":2200}],"expenses":[{"id":"e3","amount":20,"category":"transporte","concept":"Gasolina (ejemplo)","dayId":"d2","order":300},{"id":"e6","amount":18,"category":"transporte","concept":"Gasolina (ejemplo)","dayId":"d3","order":600},{"id":"e8","amount":22,"category":"transporte","concept":"Gasolina (ejemplo)","dayId":"d4","order":800},{"id":"e11","amount":20,"category":"transporte","concept":"Gasolina (ejemplo)","dayId":"d5","order":1100},{"id":"e12","amount":60,"category":"alojamiento","concept":"Alojamiento en Málaga (ejemplo)","dayId":"d5","order":1200},{"id":"e14","amount":16,"category":"transporte","concept":"Gasolina (ejemplo)","dayId":"d6","order":1400},{"id":"e16","amount":26,"category":"transporte","concept":"Gasolina (ejemplo)","dayId":"d7","order":1600},{"id":"e19","amount":19,"category":"actividades","concept":"Entrada Alhambra (ejemplo)","dayId":"d8","order":1900},{"id":"e20","amount":24,"category":"transporte","concept":"Gasolina (ejemplo)","dayId":"d8","order":2000},{"id":"e23","amount":20,"category":"transporte","concept":"Gasolina (ejemplo)","dayId":"d9","order":2300},{"id":"e26","amount":26,"category":"actividades","concept":"Entrada Sagrada Familia (ejemplo)","dayId":"d10","order":2600},{"id":"e27","amount":65,"category":"alojamiento","concept":"Alojamiento en Barcelona (ejemplo)","dayId":"d10","order":2700},{"id":"e29","amount":10,"category":"actividades","concept":"Entrada Park Güell (ejemplo)","dayId":"d11","order":2900},{"id":"e30","amount":14,"category":"actividades","concept":"Teleférico/funicular Montjuïc (ejemplo)","dayId":"d11","order":3000},{"id":"e31","amount":65,"category":"alojamiento","concept":"Alojamiento en Barcelona (ejemplo)","dayId":"d11","order":3100},{"id":"4biutzz1049boc8e4y5b","dayId":"d1","concept":"Alquiler Moto","category":"transporte","amount":550,"order":1790111747506.6655},{"id":"wmubgpcut4vaajkruhcp","dayId":"d1","concept":"Desayuno","category":"comida","amount":25,"order":1790111781147.123},{"id":"eil8acdnn9jrqmz9aqv0","dayId":"d1","concept":"Almuerzo","category":"comida","amount":50,"order":1790112046095.5464},{"id":"0rnet5bvndb85arw1wwx","dayId":"d1","concept":"Cena","category":"comida","amount":25,"order":1790112054668.3262},{"id":"b51lv3gvs1hs3cdh2tcw","dayId":"d1","concept":"Alojamiento","category":"alojamiento","amount":50,"order":1790112077867.4712},{"id":"9m9z7e5cztq9zekh5cz8","dayId":"d2","concept":"Desayuno","category":"comida","amount":25,"order":1790112097954.598},{"id":"v4gdjpggy0q27rzyhcmy","dayId":"d2","concept":"Almuerzo","category":"comida","amount":50,"order":1790112106838.2727},{"id":"ekduztk7eahf9g8e7kzu","dayId":"d2","concept":"Cena","category":"transporte","amount":25,"order":1790112110849.8972},{"id":"7l38552636s5b11oohem","dayId":"d2","concept":"Alojamiento","category":"alojamiento","amount":50,"order":1790112139236.8884},{"id":"722dmxgkjed4a75yu7jt","dayId":"d3","concept":"Comidas","category":"comida","amount":100,"order":1790112154392.265},{"id":"o793473p8ayzzxv6kzvw","dayId":"d3","concept":"Alojamiento","category":"alojamiento","amount":50,"order":1790112161939.8926},{"id":"v8llx27ekr5c5ezo2ijm","dayId":"d4","concept":"Alojamiento","category":"alojamiento","amount":50,"order":1790112178698.1345},{"id":"5oa5gtt8k6n7zvkhlz33","dayId":"d4","concept":"Comidas","category":"comida","amount":100,"order":1790112210562.851},{"id":"9wnofowny3cyqfj5etsf","dayId":"d5","concept":"Comidas","category":"comida","amount":100,"order":1790112232999.6719},{"id":"85b32rb28ar4t7upjjgc","dayId":"d6","concept":"Comidas","category":"comida","amount":100,"order":1790112302294.305},{"id":"jaihnaj0zz5wn9aqbsv4","dayId":"d6","concept":"Alojamiento","category":"alojamiento","amount":50,"order":1790112328807.7385},{"id":"yc0br8x7nw4aeg4db7q5","dayId":"d7","concept":"Comida","category":"comida","amount":100,"order":1790112340784.1562},{"id":"s04qsr3jajkerjtabtpk","dayId":"d7","concept":"Alojamiento","category":"alojamiento","amount":50,"order":1790112349495.2917},{"id":"x37qahb2q9p5fpulbiax","dayId":"d8","concept":"Comidas","category":"comida","amount":100,"order":1790112361299.1106},{"id":"wkdwtppj4ugaejmpj9vr","dayId":"d8","concept":"Alojamiento","category":"alojamiento","amount":50,"order":1790112367484.682},{"id":"9eys2ys1doaz0l2lod9a","dayId":"d9","concept":"Comidas","category":"comida","amount":100,"order":1790112395468.8423},{"id":"6jk7kp4or1n3umf3k1j0","dayId":"d9","concept":"Transporte a Barcelona","category":"transporte","amount":125,"order":1790113042666.0032},{"id":"17rdv36jqrmvmjor2z8c","dayId":"d10","concept":"Comidas","category":"comida","amount":100,"order":1790113065445.42},{"id":"bceljwnhysrpafx8uk86","dayId":"d11","concept":"Comidas","category":"comida","amount":100,"order":1790113078309.998},{"id":"agukqprtxbx0n1a7ux3r","dayId":"d1","concept":"Vuelo Bogota Alicante","category":"transporte","amount":1000,"order":1790113226789.216},{"id":"np3gdni8x2ltoxz9y1hm","dayId":"d11","concept":"TIQUETE DE REGRESO BCL-BGT","category":"transporte","amount":1447,"order":1790113505105.923}]}/*@TRIP_DATA_END@*/;
-
-  /* ---------------- state & guardado local ---------------- */
+  /* ---------------- estado y conexión ---------------- */
   var state = { tripInfo:{}, days:[], stops:[], expenses:[] };
+  var db = null;             // espacio de nombres de claude.use("db"), o null
+  var localMode = false;     // sin guardado compartido: los cambios quedan solo en esta vista
   var localIdSeq = 1;
-  var LS_KEY = "ruta-moto-sur:trip";
+  var originalPlan = null;   // plan original guardado por Claude en trip/original
+  var basedOn = null;        // (modo estático) de qué exportación salió lo que hay en el navegador
 
-  function cloneDefault(){ return JSON.parse(JSON.stringify(DEFAULT_TRIP)); }
   function stripId(rec){ var c = Object.assign({}, rec); delete c.id; return c; }
   function setStatus(text, kind){
     document.getElementById("statusText").textContent = text;
     document.getElementById("statusDot").className = "dot" + (kind ? " " + kind : "");
   }
-
-  function hasLocalStorage(){
-    try{
-      var k = "__ls_test__";
-      localStorage.setItem(k, "1"); localStorage.removeItem(k);
-      return true;
-    }catch(e){ return false; }
-  }
-  function loadFromLocalStorage(){
-    try{
-      var raw = localStorage.getItem(LS_KEY);
-      if (!raw) return null;
-      var parsed = JSON.parse(raw);
-      if (!parsed || !Array.isArray(parsed.days) || !Array.isArray(parsed.stops) || !Array.isArray(parsed.expenses)) return null;
-      return parsed;
-    }catch(e){ return null; }
-  }
-  function saveToLocalStorage(){
-    try{
-      localStorage.setItem(LS_KEY, JSON.stringify({
-        tripInfo: state.tripInfo, days: state.days, stops: state.stops, expenses: state.expenses
-      }));
-    }catch(e){ /* modo privado, cuota llena, etc. — se sigue viendo pero no se guarda */ }
+  function normalizeTrip(src){
+    return {
+      tripInfo: (src && src.tripInfo) || {},
+      days: ((src && src.days) || []).slice(),
+      stops: ((src && src.stops) || []).slice(),
+      expenses: ((src && src.expenses) || []).slice()
+    };
   }
 
-  /* ---------------- toast + confirm dialog ----------------
-     Esta página vive dentro de un artefacto de Claude, donde alert()/confirm()
-     del navegador no se muestran — así que los avisos y las confirmaciones
-     destructivas se resuelven con estos dos componentes propios. */
+  /* ---------------- aviso + confirmación ----------------
+     Dentro de un artefacto de Claude, alert()/confirm() del navegador no se muestran, así
+     que los avisos y las confirmaciones se resuelven con estos dos componentes propios. */
   var toastTimer = null;
   function toast(msg, kind){
     var el = document.getElementById("toast");
     if (!el){
       el = document.createElement("div");
       el.id = "toast";
+      el.setAttribute("role", "status");
       document.body.appendChild(el);
     }
     el.textContent = msg;
-    el.className = "toast show" + (kind ? " " + kind : "");
+    el.className = "show" + (kind ? " " + kind : "");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 3600);
   }
-
   function confirmDialog(message, onConfirm){
     var overlay = document.createElement("div");
     overlay.className = "confirm-overlay";
@@ -563,27 +647,80 @@
     overlay.querySelector('[data-act="ok"]').focus();
   }
 
-  /* ---------------- boot ----------------
-     Página estática: no depende de ningún servicio. El viaje viene, en este
-     orden, de (1) los datos horneados dentro del archivo al exportarlo desde
-     la página de Claude, (2) lo último guardado en este navegador, o (3) el
-     itinerario de ejemplo. */
+  /* ---------------- guardado local (solo copia estática) ---------------- */
+  function hasLocalStorage(){
+    try{ var k = "__ls_test__"; localStorage.setItem(k, "1"); localStorage.removeItem(k); return true; }
+    catch(e){ return false; }
+  }
+  function loadFromLocalStorage(){
+    try{
+      var raw = localStorage.getItem(LS_KEY);
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      if (!parsed || !Array.isArray(parsed.days) || !Array.isArray(parsed.stops) || !Array.isArray(parsed.expenses)) return null;
+      return parsed;
+    }catch(e){ return null; }
+  }
+  function saveToLocalStorage(){
+    if (!STATIC_MODE) return;
+    try{
+      localStorage.setItem(LS_KEY, JSON.stringify({
+        basedOn: basedOn, tripInfo: state.tripInfo, days: state.days, stops: state.stops, expenses: state.expenses
+      }));
+    }catch(e){ /* modo privado o cuota llena: se sigue viendo, pero no se guarda */ }
+  }
+
+  /* ---------------- arranque ----------------
+     En vivo, el viaje vive en la base de datos de esta página de Claude (capacidad "db"),
+     compartida con quien pueda abrirla. Claude la llenó con el plan al publicar; la página
+     no trae un viaje de ejemplo escrito en el código. */
   function boot(){
+    setView(VIEWS[0]);
     buildPresetSelect();
+    buildViewBar();
     wireStaticUI();
 
-    var saved = EXPORTED_TRIP_DATA || loadFromLocalStorage();
-    if (saved){
-      state = { tripInfo: saved.tripInfo||{}, days: saved.days||[], stops: saved.stops||[], expenses: saved.expenses||[] };
-    } else {
-      state = cloneDefault();
-    }
-    saveToLocalStorage();
+    if (STATIC_MODE){ bootStatic(); return; }
 
+    document.getElementById("resetBtn").hidden = false;
+    afterReady();
+    if (!window.claude || typeof window.claude.use !== "function"){
+      localMode = true;
+      setStatus("Vista sin conexión: abre esta página en Claude para ver y editar el viaje", "warn");
+      return;
+    }
+    setStatus("Conectando…", null);
+    window.claude.use("db").then(function(dbNs){
+      if (!dbNs){
+        localMode = true;
+        setStatus("El guardado en vivo no está disponible en esta vista: los cambios no se guardan", "warn");
+        return;
+      }
+      db = dbNs;
+      subscribeAll();
+      loadOriginal();
+    }).catch(function(err){
+      console.error(err);
+      localMode = true;
+      setStatus("No se pudo conectar al guardado en vivo", "err");
+    });
+  }
+
+  function bootStatic(){
+    document.getElementById("resetBtn").hidden = true;
+    var baked = EXPORTED_TRIP_DATA;
+    var local = loadFromLocalStorage();
+    var src = null;
+    if (baked && local && local.basedOn && local.basedOn === baked.exportedAt) src = local;
+    else if (baked) src = baked;
+    else if (local) src = local;
+    basedOn = baked ? (baked.exportedAt || null) : (local && local.basedOn) || null;
+    state = normalizeTrip(src);
+    saveToLocalStorage();
     setStatus(
       hasLocalStorage()
-        ? "Guardado en este navegador — para compartirlo, exporta la página como HTML"
-        : "Este navegador no permite guardar — los cambios se pierden al recargar",
+        ? "Guardado en este navegador: para compartirlo, exporta la página como HTML"
+        : "Este navegador no permite guardar: los cambios se pierden al recargar",
       hasLocalStorage() ? "ok" : "warn"
     );
     afterReady();
@@ -594,24 +731,244 @@
     syncStopDaySelectOptions();
     renderAll();
   }
-
-  function sortByOrder(arr){
-    arr.sort(function(a,b){ return (a.order||0) - (b.order||0); });
-  }
-
+  function sortByOrder(arr){ arr.sort(function(a,b){ return (a.order||0) - (b.order||0); }); }
   function renderAll(){
     sortByOrder(state.days); sortByOrder(state.stops); sortByOrder(state.expenses);
     renderMap(); renderStopsList(); renderDays(); renderBudget(); renderStats(); syncStopDaySelectOptions(); renderCalendar();
   }
 
-  /* ---------------- calendar ---------------- */
-  // userNav: una vez que se navega con las flechas, dejamos de re-anclar el
-  // mes visible — hasta entonces siempre seguimos a la fecha de inicio del
-  // viaje en vez de quedarnos en el mes actual del sistema.
-  var calState = { year:null, month:null, userNav:false }; // month is 0-11
+  /* ---------------- sincronización en vivo (db de Claude) ---------------- */
+  function subscribeAll(){
+    function onErr(err){
+      console.error(err);
+      var msg = (err && err.code === "revoked")
+        ? "Se perdió el acceso al guardado en vivo: vuelve a abrir la página"
+        : "Error de sincronización: recarga la página si no se recupera";
+      setStatus(msg, "err");
+    }
+    db.doc("trip/info").onSnapshot(function(snap){
+      state.tripInfo = snap.exists ? Object.assign({}, snap.data()||{}) : {};
+      applyTripInfoToInputs();
+      renderDays(); renderCalendar();
+      setStatus("Guardado en vivo: visible para quien pueda abrir esta página", "ok");
+    }, onErr);
+    db.collection("days").orderBy("order","asc").onSnapshot(function(qs){
+      state.days = qs.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      renderDays(); renderBudget(); renderStats(); syncStopDaySelectOptions(); renderCalendar(); renderMap(); renderStopsList();
+    }, onErr);
+    db.collection("stops").orderBy("order","asc").onSnapshot(function(qs){
+      state.stops = qs.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      renderMap(); renderStopsList(); renderStats(); renderDays();
+    }, onErr);
+    db.collection("expenses").orderBy("order","asc").onSnapshot(function(qs){
+      state.expenses = qs.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      renderDays(); renderBudget(); renderStats();
+    }, onErr);
+  }
+  function loadOriginal(){
+    db.doc("trip/original").get().then(function(snap){
+      if (!snap.exists) return;
+      var d = snap.data() || {};
+      try{ originalPlan = JSON.parse(d.json); }catch(e){ originalPlan = null; }
+      document.getElementById("resetBtn").disabled = !originalPlan;
+    }).catch(function(err){ console.error(err); });
+  }
+
+  /* ---------------- escrituras ---------------- */
+  function nextOrder(){ return Date.now() + Math.random(); }
+  function isLocal(){ return STATIC_MODE || localMode || !db; }
+
+  function addDoc(collection, data){
+    data = Object.assign({}, data, { order: nextOrder() });
+    if (isLocal()){
+      data.id = "local-" + Date.now().toString(36) + "-" + (localIdSeq++);
+      state[collection].push(data);
+      renderAll();
+      saveToLocalStorage();
+      return Promise.resolve(data);
+    }
+    return db.collection(collection).add(data).catch(function(err){ console.error(err); setStatus("No se pudo guardar: revisa tu conexión", "err"); });
+  }
+  function updateDoc(collection, id, patch){
+    if (isLocal()){
+      var arr = state[collection];
+      for (var i=0;i<arr.length;i++){ if (arr[i].id===id){ Object.assign(arr[i], patch); break; } }
+      renderAll();
+      saveToLocalStorage();
+      return;
+    }
+    db.collection(collection).doc(id).update(patch).catch(function(err){ console.error(err); setStatus("No se pudo guardar: revisa tu conexión", "err"); });
+  }
+  function deleteDoc(collection, id){
+    if (isLocal()){
+      state[collection] = state[collection].filter(function(x){ return x.id!==id; });
+      renderAll();
+      saveToLocalStorage();
+      return;
+    }
+    db.collection(collection).doc(id).delete().catch(function(err){ console.error(err); setStatus("No se pudo borrar: revisa tu conexión", "err"); });
+  }
+  function writeTripInfo(patch){
+    state.tripInfo = Object.assign({}, state.tripInfo, patch);
+    if (isLocal()){ saveToLocalStorage(); return; }
+    var ref = db.doc("trip/info");
+    ref.update(patch).catch(function(){
+      return ref.set(Object.assign({}, state.tripInfo));
+    }).catch(function(err){ console.error(err); toast("No se pudo guardar: revisa tu conexión", "err"); });
+  }
+  var saveTripInfo = debounce(function(){
+    writeTripInfo({
+      title: document.getElementById("tripTitle").value.slice(0,80),
+      subtitle: document.getElementById("tripSubtitle").value.slice(0,140)
+    });
+  }, 400);
+  function saveTripStartDate(value){
+    writeTripInfo({ startDate: value });
+    renderDays(); renderCalendar();
+  }
+
+  /* Ejecuta escrituras con un tope de concurrencia (la base de datos limita la tasa). */
+  function runLimited(ops, n){
+    var i = 0, active = 0, failed = false;
+    return new Promise(function(resolve, reject){
+      function next(){
+        if (failed) return;
+        if (i >= ops.length && active === 0){ resolve(); return; }
+        while (active < n && i < ops.length){
+          var op = ops[i++]; active++;
+          op().then(function(){ active--; next(); }, function(err){ failed = true; reject(err); });
+        }
+      }
+      next();
+    });
+  }
+  /* Reemplaza el viaje completo (restaurar el plan original o importar un .json): primero
+     borra lo que ya no va, después escribe todo lo nuevo. No hay transacciones. */
+  function replaceWholeTrip(plan){
+    if (isLocal()){
+      state = normalizeTrip(plan);
+      afterReady();
+      saveToLocalStorage();
+      return Promise.resolve();
+    }
+    var deletes = [], sets = [];
+    ["days","stops","expenses"].forEach(function(col){
+      var keep = {};
+      (plan[col]||[]).forEach(function(rec){ if (rec.id) keep[rec.id] = true; });
+      state[col].forEach(function(rec){
+        if (!keep[rec.id]) deletes.push(function(){ return db.collection(col).doc(rec.id).delete(); });
+      });
+      (plan[col]||[]).forEach(function(rec){
+        var id = rec.id || (col.slice(0,1) + Date.now().toString(36) + Math.random().toString(36).slice(2,7));
+        sets.push(function(){ return db.collection(col).doc(id).set(stripId(rec)); });
+      });
+    });
+    sets.unshift(function(){ return db.doc("trip/info").set(Object.assign({}, plan.tripInfo || {})); });
+    setStatus("Guardando el viaje…", null);
+    return runLimited(deletes, 5).then(function(){ return runLimited(sets, 5); }).then(function(){
+      setStatus("Guardado en vivo: visible para quien pueda abrir esta página", "ok");
+    });
+  }
+
+  function restoreOriginal(){
+    if (!originalPlan) return;
+    confirmDialog(
+      "Esto reemplaza el viaje actual, para ti y para quien pueda abrir esta página, por el plan original que armó Claude. Puedes exportar antes si quieres conservar tus cambios. ¿Continuar?",
+      function(){
+        replaceWholeTrip(originalPlan).then(function(){ toast("Plan original restaurado", "ok"); })
+          .catch(function(err){ console.error(err); toast("No se pudo restaurar: " + (err && err.message || err), "err"); });
+      }
+    );
+  }
+
+  /* ---------------- exportar / importar ---------------- */
+  function safeTripFileName(){
+    return (state.tripInfo && state.tripInfo.title ? state.tripInfo.title : "ruta-norte-italia")
+      .toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")
+      .replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"") || "ruta-norte-italia";
+  }
+  function tripPayload(){
+    return { exportedAt: new Date().toISOString(), tripInfo: state.tripInfo, days: state.days, stops: state.stops, expenses: state.expenses };
+  }
+  function downloadBlob(filename, content, mime){
+    var blob = new Blob([content], {type:mime});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  }
+  function offerFile(filename, content, mime, okMsg){
+    if (STATIC_MODE){
+      downloadBlob(filename, content, mime);
+      toast(okMsg, "ok");
+      return;
+    }
+    if (!window.claude || typeof window.claude.use !== "function"){
+      toast("Exportar solo funciona abriendo esta página en Claude", "err");
+      return;
+    }
+    window.claude.use("downloads").then(function(downloads){
+      if (!downloads){ toast("Exportar no está disponible en esta vista", "err"); return; }
+      return downloads.save({ filename: filename, data: content }).then(function(){ toast(okMsg, "ok"); });
+    }).catch(function(err){
+      if (err && err.code === "declined") return;
+      console.error(err); toast("No se pudo exportar el archivo", "err");
+    });
+  }
+  function exportJson(){
+    offerFile(safeTripFileName() + ".json", JSON.stringify(tripPayload(), null, 2), "application/json", "Exportado");
+  }
+  function bakeTrip(html){
+    var payloadJson = JSON.stringify(tripPayload()).replace(/</g, "\\u003c");
+    return html.replace(TRIP_DATA_RE, function(){ return MARK_START + payloadJson + MARK_END; });
+  }
+  /* Descarga una página estática independiente, con el viaje actual adentro, lista para
+     abrir directamente o subir a GitHub Pages. En vivo parte de "static-template.html"
+     (publicada junto a esta página); en la copia estática se toma a sí misma. */
+  function exportHtml(){
+    var name = safeTripFileName() + ".html";
+    if (STATIC_MODE){
+      var activeTab = document.querySelector(".tab.active");
+      if (activeTab && activeTab.dataset.tab !== "map") document.querySelector('.tab[data-tab="map"]').click();
+      var html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+      if (!TRIP_DATA_RE.test(html)){ toast("No se pudo preparar la página para exportar", "err"); return; }
+      offerFile(name, bakeTrip(html), "text/html", "Página exportada");
+      return;
+    }
+    fetch("static-template.html").then(function(res){
+      if (!res.ok) throw new Error("fetch " + res.status);
+      return res.text();
+    }).then(function(html){
+      if (!TRIP_DATA_RE.test(html)){ toast("No se pudo preparar la página para exportar", "err"); return; }
+      offerFile(name, bakeTrip(html), "text/html", "Página exportada");
+    }).catch(function(err){ console.error(err); toast("No se pudo exportar la página", "err"); });
+  }
+  function importStateFromFile(file){
+    var reader = new FileReader();
+    reader.onload = function(){
+      var data;
+      try{ data = JSON.parse(reader.result); }
+      catch(e){ toast("No se pudo leer el archivo. Elige un .json exportado desde esta página.", "err"); return; }
+      if (!data || !Array.isArray(data.days) || !Array.isArray(data.stops) || !Array.isArray(data.expenses)){
+        toast("Ese archivo no tiene el formato esperado (exportado desde esta misma página).", "err");
+        return;
+      }
+      var msg = isLocal()
+        ? "Esto reemplaza el viaje actual por el contenido del archivo importado. ¿Continuar?"
+        : "Esto reemplaza el viaje compartido actual, para ti y para quien pueda abrir esta página, por el contenido del archivo importado. ¿Continuar?";
+      confirmDialog(msg, function(){
+        replaceWholeTrip(data).then(function(){ toast("Importado", "ok"); })
+          .catch(function(err){ console.error(err); toast("No se pudo importar: " + (err && err.message || err), "err"); });
+      });
+    };
+    reader.readAsText(file);
+  }
+
+  /* ---------------- calendario ---------------- */
+  var calState = { year:null, month:null, userNav:false };
   var MONTH_NAMES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
   var WEEKDAY_NAMES = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
-
   function parseISODate(s){
     var p = String(s||"").split("-");
     if (p.length!==3) return null;
@@ -623,29 +980,20 @@
     var dd = String(dt.getDate()); if (dd.length<2) dd = "0"+dd;
     return dt.getFullYear() + "-" + mm + "-" + dd;
   }
-  // Ancla el calendario a la posición de cada día en el itinerario: el Día 1 cae
-  // en la fecha de inicio del viaje, el Día 2 al día siguiente, etc. — así, al
-  // añadir, borrar o reordenar un día en la pestaña de Itinerario, todas las
-  // fechas se recalculan solas, sin tener que tocar el calendario.
   function tripStartDate(){ return parseISODate(state.tripInfo && state.tripInfo.startDate); }
   function computeDayDate(index){
     var start = tripStartDate();
     if (!start) return null;
     return new Date(start.getFullYear(), start.getMonth(), start.getDate() + index);
   }
-  function formatDayDateShort(dt){
-    return WEEKDAY_NAMES[(dt.getDay()+6)%7] + " " + dt.getDate() + " " + MONTH_NAMES[dt.getMonth()].slice(0,3);
-  }
-  function formatDayDateLong(dt){
-    return dt.getDate() + " de " + MONTH_NAMES[dt.getMonth()] + " de " + dt.getFullYear();
-  }
+  function formatDayDateShort(dt){ return WEEKDAY_NAMES[(dt.getDay()+6)%7] + " " + dt.getDate() + " " + MONTH_NAMES[dt.getMonth()].slice(0,3); }
+  function formatDayDateLong(dt){ return dt.getDate() + " de " + MONTH_NAMES[dt.getMonth()] + " de " + dt.getFullYear(); }
   function ensureCalInit(){
     if (calState.userNav && calState.year !== null) return;
     var base = tripStartDate() || new Date();
     calState.year = base.getFullYear();
     calState.month = base.getMonth();
   }
-
   function renderCalendar(){
     ensureCalInit();
     var grid = document.getElementById("calGrid");
@@ -653,23 +1001,18 @@
     var summary = document.getElementById("calSummary");
     var emptyHint = document.getElementById("calEmptyHint");
     if (!grid) return;
-
     syncStartDateInputs();
-
     label.textContent = MONTH_NAMES[calState.month] + " " + calState.year;
-
     var start = tripStartDate();
     emptyHint.hidden = !!start;
-
     if (!state.days.length){
       summary.textContent = "Todavía no hay días en el itinerario.";
     } else if (!start){
-      summary.textContent = state.days.length + " día" + (state.days.length===1?"":"s") + " en el itinerario — falta la fecha de inicio para ubicarlos en el calendario.";
+      summary.textContent = state.days.length + " día" + (state.days.length===1?"":"s") + " en el itinerario; falta la fecha de inicio para ubicarlos en el calendario.";
     } else {
       var lastDt = computeDayDate(state.days.length-1);
       summary.textContent = "Del " + formatDayDateLong(start) + " al " + formatDayDateLong(lastDt) + " (" + state.days.length + " día" + (state.days.length===1?"":"s") + ").";
     }
-
     var byDate = {};
     if (start){
       state.days.forEach(function(d, i){
@@ -677,38 +1020,29 @@
         (byDate[iso] = byDate[iso] || []).push({ day:d, index:i });
       });
     }
-
     var firstOfMonth = new Date(calState.year, calState.month, 1);
-    var startOffset = (firstOfMonth.getDay() + 6) % 7; // lunes = 0
+    var startOffset = (firstOfMonth.getDay() + 6) % 7;
     var daysInMonth = new Date(calState.year, calState.month+1, 0).getDate();
     var todayISO = toISODate(new Date());
-
     var html = WEEKDAY_NAMES.map(function(w){ return '<div class="cal-weekday">'+w+'</div>'; }).join("");
     for (var i=0; i<startOffset; i++){ html += '<div class="cal-cell outside"></div>'; }
     for (var day=1; day<=daysInMonth; day++){
       var iso = toISODate(new Date(calState.year, calState.month, day));
-      var entries = byDate[iso] || [];
-      var chips = entries.map(function(e){
-        return '<div class="cal-chip"><span class="n">Día '+(e.index+1)+'</span>'+escapeHtml((e.day.title||"Sin título").slice(0,28))+'</div>';
+      var chips = (byDate[iso] || []).map(function(e){
+        return '<div class="cal-chip"><span class="n">Día '+(e.index+1)+'</span>'+escapeHtml((e.day.title||"Sin título").slice(0,34))+'</div>';
       }).join("");
       html += '<div class="cal-cell'+(iso===todayISO?" today":"")+'"><span class="cal-daynum">'+day+'</span>'+chips+'</div>';
     }
     grid.innerHTML = html;
   }
-
   function applyTripInfoToInputs(){
     var t = state.tripInfo || {};
     var titleEl = document.getElementById("tripTitle");
     var subEl = document.getElementById("tripSubtitle");
-    if (document.activeElement !== titleEl) titleEl.value = t.title || DEFAULT_TRIP.tripInfo.title;
-    if (document.activeElement !== subEl) subEl.value = t.subtitle || DEFAULT_TRIP.tripInfo.subtitle;
+    if (document.activeElement !== titleEl) titleEl.value = t.title || "Ruta en moto por el norte de Italia";
+    if (document.activeElement !== subEl) subEl.value = t.subtitle || "";
     syncStartDateInputs();
   }
-
-  // Hay dos campos de fecha de inicio en pantalla — uno en «Itinerario y
-  // presupuesto» y otro en «Calendario» — que representan el mismo valor
-  // (state.tripInfo.startDate). Esta función los mantiene sincronizados sin
-  // pisar el que el usuario esté escribiendo en ese momento.
   function syncStartDateInputs(){
     var v = (state.tripInfo && state.tripInfo.startDate) || "";
     document.querySelectorAll(".trip-start-date-input").forEach(function(el){
@@ -716,195 +1050,63 @@
     });
   }
 
-  /* ---------------- writes (todo vive en el navegador) ---------------- */
-  function nextOrder(){ return Date.now() + Math.random(); }
-
-  function addDoc(collection, data){
-    data = Object.assign({}, data, { order: nextOrder(), id: "local-" + (localIdSeq++) });
-    state[collection].push(data);
-    renderAll();
-    saveToLocalStorage();
-    return Promise.resolve(data);
-  }
-  function updateDoc(collection, id, patch){
-    var arr = state[collection];
-    for (var i=0;i<arr.length;i++){ if (arr[i].id===id){ Object.assign(arr[i], patch); break; } }
-    renderAll();
-    saveToLocalStorage();
-  }
-  function deleteDoc(collection, id){
-    state[collection] = state[collection].filter(function(x){ return x.id!==id; });
-    renderAll();
-    saveToLocalStorage();
-  }
-
-  var saveTripInfo = debounce(function(){
-    var data = {
-      title: document.getElementById("tripTitle").value.slice(0,80),
-      subtitle: document.getElementById("tripSubtitle").value.slice(0,120)
-    };
-    state.tripInfo = Object.assign({}, state.tripInfo, data);
-    saveToLocalStorage();
-  }, 400);
-
-  function saveTripStartDate(value){
-    state.tripInfo = Object.assign({}, state.tripInfo, { startDate: value });
-    renderDays(); renderCalendar();
-    saveToLocalStorage();
-  }
-
-  /* ---------------- reset to example ---------------- */
-  function resetToExample(){
-    confirmDialog(
-      "Esto reemplaza el viaje actual — guardado en este navegador — por el itinerario de ejemplo. Puedes exportar antes si quieres conservar lo tuyo. ¿Continuar?",
-      function(){
-        state = cloneDefault();
-        afterReady();
-        saveToLocalStorage();
-      }
-    );
-  }
-
-  /* ---------------- export / import (manual backup) ---------------- */
-  function safeTripFileName(){
-    return (state.tripInfo && state.tripInfo.title ? state.tripInfo.title : "ruta-moto-sur")
-      .toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"") || "ruta-moto-sur";
-  }
-  function downloadBlob(filename, content, mime){
-    var blob = new Blob([content], {type:mime});
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
-  }
-
-  function exportState(){
-    var payload = {
-      exportedAt: new Date().toISOString(),
-      tripInfo: state.tripInfo,
-      days: state.days,
-      stops: state.stops,
-      expenses: state.expenses
-    };
-    downloadBlob(safeTripFileName() + ".json", JSON.stringify(payload, null, 2), "application/json");
-    toast("Exportado", "ok");
-  }
-
-  // Descarga esta misma página con el viaje actual ya horneado dentro (rellena
-  // el hueco entre los marcadores @TRIP_DATA_START@/@TRIP_DATA_END@ en su
-  // propio código fuente), lista para abrir directamente, subir a un
-  // repositorio de GitHub (por ejemplo con GitHub Pages) o mandar por
-  // cualquier otro medio. Los marcadores se dejan intactos en el resultado,
-  // así que exportar de nuevo desde el archivo ya exportado también funciona.
-  var TRIP_DATA_RE = /\/\*@TRIP_DATA_START@\*\/[\s\S]*?\/\*@TRIP_DATA_END@\*\//;
-  function exportHtmlSnapshot(){
-    var activeTab = document.querySelector(".tab.active");
-    if (activeTab && activeTab.dataset.tab !== "map") document.querySelector('.tab[data-tab="map"]').click();
-    var payload = { tripInfo: state.tripInfo, days: state.days, stops: state.stops, expenses: state.expenses };
-    // Escapamos "<" para que un texto del viaje que contenga la etiqueta de
-    // cierre de script (por ejemplo en una nota o descripción) no rompa el
-    // HTML resultante.
-    var payloadJson = JSON.stringify(payload).replace(/</g, "\\u003c");
-    var replacement = "/*@TRIP_DATA_START@*/" + payloadJson + "/*@TRIP_DATA_END@*/";
-    var html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-    if (!TRIP_DATA_RE.test(html)){
-      toast("No se pudo preparar la página para exportar", "err");
-      return;
-    }
-    html = html.replace(TRIP_DATA_RE, replacement);
-    downloadBlob(safeTripFileName() + ".html", html, "text/html");
-    toast("Página exportada", "ok");
-  }
-
-  function importStateFromFile(file){
-    var reader = new FileReader();
-    reader.onload = function(){
-      var data;
-      try{
-        data = JSON.parse(reader.result);
-      }catch(e){
-        toast("No se pudo leer el archivo. Asegúrate de elegir un .json exportado desde esta página.", "err");
-        return;
-      }
-      if (!data || !Array.isArray(data.days) || !Array.isArray(data.stops) || !Array.isArray(data.expenses)){
-        toast("Ese archivo no tiene el formato esperado (exportado desde esta misma página).", "err");
-        return;
-      }
-      confirmDialog(
-        "Esto reemplaza el viaje actual — guardado en este navegador — por el contenido del archivo importado. ¿Continuar?",
-        function(){
-          state = { tripInfo:data.tripInfo||{}, days:data.days, stops:data.stops, expenses:data.expenses };
-          afterReady();
-          saveToLocalStorage();
-          toast("Importado", "ok");
-        }
-      );
-    };
-    reader.readAsText(file);
-  }
-
-  /* ---------------- static UI wiring ---------------- */
+  /* ---------------- UI fija ---------------- */
   function wireStaticUI(){
+    if (STATIC_MODE){
+      var exp = document.getElementById("exportHtmlBtn");
+      exp.textContent = "⭳ Exportar página HTML";
+      exp.title = "Guarda una copia de esta página con el viaje actual adentro";
+      document.getElementById("footNote").innerHTML =
+        '<b>Sobre guardar esta página:</b> es un archivo estático: los cambios se guardan solo en este navegador (almacenamiento local) y no se sincronizan con nadie más. '+
+        'Después de editar, usen «Exportar página HTML» para descargar una copia con el viaje actual adentro y súbanla a su repositorio de GitHub (o mándenla a quien quieran). '+
+        '«Exportar .json» e «Importar .json» sirven como respaldo de los datos. <b>Sobre el mapa:</b> es esquemático; para navegar usen el enlace a Google Maps de cada día.';
+    }
     document.querySelectorAll(".tab").forEach(function(tab){
       tab.addEventListener("click", function(){
         document.querySelectorAll(".tab").forEach(function(t){ t.classList.remove("active"); });
         document.querySelectorAll(".panel").forEach(function(p){ p.classList.remove("active"); });
         tab.classList.add("active");
         document.getElementById("panel-" + tab.dataset.tab).classList.add("active");
-        // Los textareas de notas que se redimensionaron mientras su panel
-        // estaba oculto (display:none) miden mal su alto — se recalculan al
-        // volver a mostrarse.
         if (tab.dataset.tab === "cal"){
-          document.querySelectorAll(".day-notes").forEach(autoResizeTextarea);
+          document.querySelectorAll(".day-notes-box.editing .day-notes").forEach(autoResizeTextarea);
         }
       });
     });
-
     document.getElementById("tripTitle").addEventListener("input", saveTripInfo);
     document.getElementById("tripSubtitle").addEventListener("input", saveTripInfo);
-
     document.querySelectorAll(".trip-start-date-input").forEach(function(el){
       el.addEventListener("change", function(){
         saveTripStartDate(this.value);
-        calState.year = null; calState.month = null; calState.userNav = false; // vuelve a anclar el mes visible al nuevo inicio
+        calState.year = null; calState.month = null; calState.userNav = false;
         renderCalendar();
       });
     });
-
     document.getElementById("calPrevBtn").addEventListener("click", function(){
-      ensureCalInit();
-      calState.userNav = true;
+      ensureCalInit(); calState.userNav = true;
       calState.month--; if (calState.month < 0){ calState.month = 11; calState.year--; }
       renderCalendar();
     });
     document.getElementById("calNextBtn").addEventListener("click", function(){
-      ensureCalInit();
-      calState.userNav = true;
+      ensureCalInit(); calState.userNav = true;
       calState.month++; if (calState.month > 11){ calState.month = 0; calState.year++; }
       renderCalendar();
     });
-
-    document.getElementById("exportHtmlBtn").addEventListener("click", exportHtmlSnapshot);
-    document.getElementById("exportBtn").addEventListener("click", exportState);
-    document.getElementById("importBtn").addEventListener("click", function(){
-      document.getElementById("importFile").click();
-    });
+    document.getElementById("exportHtmlBtn").addEventListener("click", exportHtml);
+    document.getElementById("exportBtn").addEventListener("click", exportJson);
+    document.getElementById("importBtn").addEventListener("click", function(){ document.getElementById("importFile").click(); });
     document.getElementById("importFile").addEventListener("change", function(){
       if (this.files && this.files[0]) importStateFromFile(this.files[0]);
       this.value = "";
     });
-    document.getElementById("resetBtn").addEventListener("click", resetToExample);
-
+    document.getElementById("resetBtn").addEventListener("click", restoreOriginal);
     document.getElementById("stopPreset").addEventListener("change", function(){
-      var custom = this.value === "custom";
-      document.getElementById("customFields").classList.toggle("show", custom);
+      document.getElementById("customFields").classList.toggle("show", this.value === "custom");
     });
-
     document.getElementById("addStopForm").addEventListener("submit", function(e){
       e.preventDefault();
       var presetSel = document.getElementById("stopPreset");
       var dayId = document.getElementById("stopDay").value || null;
+      var noNav = document.getElementById("stopNoNav").checked;
       var name, lat, lon, category;
       if (presetSel.value === "custom"){
         name = document.getElementById("customName").value.trim();
@@ -912,40 +1114,38 @@
         lon = parseFloat(document.getElementById("customLon").value.trim().replace(",", "."));
         category = "personalizado";
         if (!name || isNaN(lat) || isNaN(lon)){
-          toast("Escribe un nombre y una latitud/longitud válidas (ej. lat 36.74, lon -5.16).", "err");
+          toast("Escribe un nombre y una latitud/longitud válidas (ej. lat 45.88, lon 10.84).", "err");
           return;
         }
       } else {
         var p = PRESETS[parseInt(presetSel.value,10)];
         name = p[0]; lat = p[1]; lon = p[2]; category = p[3];
       }
-      addDoc("stops", { name:name, lat:lat, lon:lon, category:category, dayId:dayId }).then(function(){
+      var rec = { name:name, lat:lat, lon:lon, category:category, dayId:dayId };
+      if (noNav) rec.nav = false;
+      addDoc("stops", rec).then(function(saved){
+        if (!saved) return;  // el error ya se mostró en la línea de estado
         document.getElementById("customName").value = "";
         document.getElementById("customLat").value = "";
         document.getElementById("customLon").value = "";
+        document.getElementById("stopNoNav").checked = false;
+        toast("Parada añadida: " + name, "ok");
       });
     });
-
     document.getElementById("addDayBtn").addEventListener("click", function(){
-      var n = state.days.length + 1;
-      addDoc("days", { title:"Día " + n, date:"", notes:"" });
+      addDoc("days", { title:"Día " + (state.days.length + 1), date:"", notes:"", km:0 });
     });
   }
 
   function buildPresetSelect(){
     var sel = document.getElementById("stopPreset");
     var groups = {};
-    PRESETS.forEach(function(p, i){
-      var cat = p[3];
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push([i,p]);
-    });
-    var order = ["ciudad","pueblo","costa","naturaleza"];
-    order.forEach(function(cat){
+    PRESETS.forEach(function(p, i){ (groups[p[3]] = groups[p[3]] || []).push([i,p]); });
+    CATEGORY_ORDER.forEach(function(cat){
       if (!groups[cat]) return;
       var og = document.createElement("optgroup");
       og.label = CATEGORY_LABELS[cat];
-      groups[cat].sort(function(a,b){ return a[1][0].localeCompare(b[1][0]); }).forEach(function(pair){
+      groups[cat].sort(function(a,b){ return a[1][0].localeCompare(b[1][0], "es"); }).forEach(function(pair){
         var opt = document.createElement("option");
         opt.value = pair[0];
         opt.textContent = pair[1][0];
@@ -958,7 +1158,25 @@
     customOpt.textContent = "+ Punto personalizado (coordenadas propias)";
     sel.appendChild(customOpt);
   }
-
+  function buildViewBar(){
+    var bar = document.getElementById("viewBar");
+    bar.innerHTML = VIEWS.map(function(v){
+      return '<button type="button" class="chip'+(v.id===view.id?" active":"")+'" data-view="'+v.id+'" aria-pressed="'+(v.id===view.id)+'">'+escapeHtml(v.label)+'</button>';
+    }).join("");
+    bar.querySelectorAll(".chip").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var v = VIEWS.filter(function(x){ return x.id === btn.dataset.view; })[0];
+        if (!v) return;
+        setView(v);
+        bar.querySelectorAll(".chip").forEach(function(b){
+          var on = b.dataset.view === v.id;
+          b.classList.toggle("active", on);
+          b.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        renderMap();
+      });
+    });
+  }
   function syncStopDaySelectOptions(){
     var sel = document.getElementById("stopDay");
     var current = sel.value;
@@ -966,26 +1184,79 @@
     var noneOpt = document.createElement("option");
     noneOpt.value = ""; noneOpt.textContent = "Sin día asignado";
     sel.appendChild(noneOpt);
-    state.days.forEach(function(d){
+    state.days.forEach(function(d, i){
       var opt = document.createElement("option");
-      opt.value = d.id; opt.textContent = d.title || "Día";
+      opt.value = d.id; opt.textContent = "Día " + (i+1) + " · " + (d.title || "Sin título");
       sel.appendChild(opt);
     });
     if ([].slice.call(sel.options).some(function(o){return o.value===current;})) sel.value = current;
   }
 
-  /* ---------------- marker collision layout ---------------- */
-  // Separa por fuerza los marcadores que caen a menos de un diámetro + 2px
-  // (el hueco de 2px entre marcas que pide el sistema de diseño) de distancia,
-  // dejando el resto donde de verdad les corresponde por coordenadas.
-  function markerLayout(stops){
-    var MIN_DIST = 22; // 2 × radio(10) + 2px de aire
-    var PAD = 14;
+  /* ---------------- rutas: bases y enlaces a Google Maps ---------------- */
+  function isNav(s){ return s.nav !== false; }
+  function stopsOfDay(dayId){ return state.stops.filter(function(s){ return s.dayId === dayId; }); }
+  /* La base de cada día es su última parada en moto: donde duermen. */
+  function baseStopIds(){
+    var ids = {};
+    state.days.forEach(function(d){
+      var nav = stopsOfDay(d.id).filter(isNav);
+      if (nav.length) ids[nav[nav.length-1].id] = true;
+    });
+    return ids;
+  }
+  function ll(s){ return s.lat + "," + s.lon; }
+  function sample(arr, max){
+    if (arr.length <= max) return arr.slice();
+    var out = [];
+    for (var i=0;i<max;i++){ out.push(arr[Math.round(i*(arr.length-1)/(max-1))]); }
+    return out;
+  }
+  function gmapsUrl(origin, dest, mids){
+    var url = "https://www.google.com/maps/dir/?api=1&origin=" + ll(origin) + "&destination=" + ll(dest) + "&travelmode=driving";
+    if (mids && mids.length) url += "&waypoints=" + encodeURIComponent(mids.map(ll).join("|"));
+    return url;
+  }
+  function dayRouteUrl(dayIndex){
+    var day = state.days[dayIndex];
+    if (!day) return null;
+    var nav = stopsOfDay(day.id).filter(isNav);
+    if (!nav.length) return null;
+    var origin = null;
+    for (var i=dayIndex-1; i>=0 && !origin; i--){
+      var prev = stopsOfDay(state.days[i].id).filter(isNav);
+      if (prev.length) origin = prev[prev.length-1];
+    }
+    var list = nav.slice();
+    if (!origin){ origin = list.shift(); if (!list.length) return null; }
+    var dest = list.pop();
+    return gmapsUrl(origin, dest, sample(list, 9));
+  }
+  function wholeLoopUrl(){
+    var nav = state.stops.filter(isNav);
+    if (nav.length < 2) return null;
+    var bases = [];
+    state.days.forEach(function(d){
+      var n = stopsOfDay(d.id).filter(isNav);
+      if (n.length) bases.push(n[n.length-1]);
+    });
+    var origin = nav[0], dest = nav[nav.length-1];
+    var mids = bases.filter(function(s, i, arr){
+      if (s.id === origin.id || s.id === dest.id) return false;
+      var prev = arr[i-1];
+      return !(prev && prev.lat === s.lat && prev.lon === s.lon);
+    });
+    return gmapsUrl(origin, dest, sample(mids, 9));
+  }
+
+  /* ---------------- mapa ---------------- */
+  // Separa los marcadores que quedan encimados, dejando el resto donde les corresponde.
+  function markerLayout(stops, r){
+    var MIN_DIST = 2*r + 2, PAD = r + 4;
     var pts = stops.map(function(s){
       var p = project(s.lat, s.lon);
       return { stop:s, tx:p.x, ty:p.y, x:p.x, y:p.y };
     });
-    for (var iter=0; iter<200; iter++){
+    for (var iter=0; iter<220; iter++){
       var moved = false;
       for (var i=0; i<pts.length; i++){
         for (var j=i+1; j<pts.length; j++){
@@ -1012,134 +1283,182 @@
     });
     return pts;
   }
+  function rectsOverlap(a, b){ return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h; }
+  function rectHitsCircle(r, c){
+    var nx = Math.max(r.x, Math.min(c.x, r.x + r.w)), ny = Math.max(r.y, Math.min(c.y, r.y + r.h));
+    var dx = c.x - nx, dy = c.y - ny;
+    return dx*dx + dy*dy < c.r*c.r;
+  }
+  // Etiquetas con nombre en las vistas de cerca: prueba derecha, izquierda, arriba y abajo;
+  // si ninguna cabe sin tapar otra, esa parada queda solo con su número.
+  function placeLabels(pts, r){
+    var placed = [], out = [];
+    var circles = pts.map(function(p){ return { x:p.x, y:p.y, r:r+1.5 }; });
+    pts.forEach(function(p){
+      var text = shortName(p.stop.name);
+      var w = Math.min(170, text.length * 6.3 + 4), h = 14;
+      var cands = [
+        { x:p.x + r + 4, y:p.y - h/2 },
+        { x:p.x - r - 4 - w, y:p.y - h/2 },
+        { x:p.x - w/2, y:p.y - r - 3 - h },
+        { x:p.x - w/2, y:p.y + r + 3 }
+      ];
+      for (var i=0; i<cands.length; i++){
+        var rect = { x:cands[i].x, y:cands[i].y, w:w, h:h };
+        if (rect.x < 3 || rect.y < 3 || rect.x + w > MAP_W - 3 || rect.y + h > MAP_H - 3) continue;
+        if (placed.some(function(q){ return rectsOverlap(rect, q); })) continue;
+        if (circles.some(function(c){ return rectHitsCircle(rect, c); })) continue;
+        placed.push(rect);
+        out.push({ text:text, x:rect.x + 2, y:rect.y + h - 3 });
+        return;
+      }
+    });
+    return out;
+  }
+  function pathFrom(points, close){
+    var d = points.map(function(c, i){
+      var p = project(c[0], c[1]);
+      return (i ? "L" : "M") + p.x.toFixed(1) + " " + p.y.toFixed(1);
+    }).join(" ");
+    return close ? d + " Z" : d;
+  }
+  function niceScaleKm(){
+    var lonSpanKm = (BOUNDS.lonMax - BOUNDS.lonMin) * 111.32 * Math.cos(view.cLat * Math.PI / 180);
+    var pxPerKm = MAP_W / lonSpanKm;
+    var choices = [2, 5, 10, 20, 25, 50, 100, 200];
+    var best = choices[0];
+    choices.forEach(function(c){ if (c * pxPerKm <= MAP_W * 0.24) best = c; });
+    return { km:best, px:best * pxPerKm };
+  }
 
-  /* ---------------- map render ---------------- */
   function renderMap(){
     var svg = document.getElementById("mapSvg");
+    if (!svg || !BOUNDS) return;
+    var zoomed = view.id !== "all";
+    var r = zoomed ? 10 : 8.5;
     var parts = [];
-
-    parts.push('<rect x="0" y="0" width="'+MAP_W+'" height="'+MAP_H+'" fill="var(--map-sea-1)"></rect>');
-
-    var allCoast = COASTLINE.concat(COASTLINE_EXTRA.slice(1));
-    var coastPts = allCoast.map(function(c){ var p = project(c[0], c[1]); return p.x.toFixed(1)+","+p.y.toFixed(1); });
-    var landPath = "M " + coastPts.join(" L ") + " L " + MAP_W + " 0 L 0 0 Z";
-    var seaPath = "M " + coastPts.join(" L ") + " L " + MAP_W + " " + MAP_H + " L 0 " + MAP_H + " Z";
     parts.push('<defs>'+
-      '<linearGradient id="seaGrad" x1="0" y1="0" x2="0" y2="1">'+
-        '<stop offset="0%" stop-color="var(--map-sea-1)"/><stop offset="100%" stop-color="var(--map-sea-2)"/>'+
-      '</linearGradient>'+
-      '<linearGradient id="landGrad" x1="0" y1="0" x2="0" y2="1">'+
-        '<stop offset="0%" stop-color="var(--map-land-1)"/><stop offset="100%" stop-color="var(--map-land-2)"/>'+
-      '</linearGradient>'+
+      '<linearGradient id="seaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d3e8ea"/><stop offset="100%" stop-color="#a3cdd3"/></linearGradient>'+
+      '<linearGradient id="landGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f2e8d0"/><stop offset="100%" stop-color="#e3d3ad"/></linearGradient>'+
     '</defs>');
-    parts.push('<path d="'+seaPath+'" fill="url(#seaGrad)"></path>');
-    parts.push('<path d="'+landPath+'" fill="url(#landGrad)"></path>');
-    parts.push('<path d="M '+coastPts.join(" L ")+'" fill="none" stroke="var(--map-land-2)" stroke-width="1.5" opacity="0.6"></path>');
+    parts.push('<rect class="sea" x="0" y="0" width="'+MAP_W+'" height="'+MAP_H+'"></rect>');
+    parts.push('<path class="land" d="'+pathFrom(LAND, true)+'"></path>');
+    LAKES.forEach(function(l){ parts.push('<path class="lake" d="'+pathFrom(l.pts, true)+'"><title>'+escapeHtml(l.name)+'</title></path>'); });
+    BORDERS.forEach(function(b){ parts.push('<path class="border" d="'+pathFrom(b, false)+'"></path>'); });
 
-    var kmPerDeg = 111.32 * Math.cos((BOUNDS.latMin+BOUNDS.latMax)/2*Math.PI/180);
-    var pxPer100km = (100/kmPerDeg) / (BOUNDS.lonMax-BOUNDS.lonMin) * MAP_W;
-    var sbX = 18, sbY = MAP_H-18;
-    parts.push('<g font-family="var(--font-mono)" font-size="10" fill="var(--ink-muted)">'+
-      '<line x1="'+sbX+'" y1="'+sbY+'" x2="'+(sbX+pxPer100km)+'" y2="'+sbY+'" stroke="var(--ink-muted)" stroke-width="2"></line>'+
-      '<line x1="'+sbX+'" y1="'+(sbY-4)+'" x2="'+sbX+'" y2="'+(sbY+4)+'" stroke="var(--ink-muted)" stroke-width="2"></line>'+
-      '<line x1="'+(sbX+pxPer100km)+'" y1="'+(sbY-4)+'" x2="'+(sbX+pxPer100km)+'" y2="'+(sbY+4)+'" stroke="var(--ink-muted)" stroke-width="2"></line>'+
-      '<text x="'+sbX+'" y="'+(sbY-8)+'">100 km (aprox.)</text>'+
-    '</g>');
-
-    if (state.stops.length > 1){
-      var routePts = state.stops.map(function(s){ var p = project(s.lat, s.lon); return p.x.toFixed(1)+","+p.y.toFixed(1); }).join(" ");
-      parts.push('<polyline points="'+routePts+'" fill="none" stroke="var(--route)" stroke-width="2.5" stroke-dasharray="1,7" stroke-linecap="round" opacity="0.85"></polyline>');
+    GEO_LABELS.forEach(function(g){
+      if (g.views.indexOf(view.id) === -1 || !inView(g.lat, g.lon)) return;
+      var p = project(g.lat, g.lon);
+      var tr = g.rotate ? ' transform="rotate('+g.rotate+' '+p.x.toFixed(1)+' '+p.y.toFixed(1)+')"' : "";
+      parts.push('<text class="geo-label" x="'+p.x.toFixed(1)+'" y="'+p.y.toFixed(1)+'" text-anchor="middle"'+tr+'>'+escapeHtml(g.text)+'</text>');
+    });
+    if (zoomed){
+      LAKES.forEach(function(l){
+        if (!l.label || !inView(l.label[0], l.label[1])) return;
+        var p = project(l.label[0], l.label[1]);
+        parts.push('<text class="lake-label" x="'+p.x.toFixed(1)+'" y="'+p.y.toFixed(1)+'" text-anchor="middle">'+escapeHtml(l.name)+'</text>');
+      });
     }
 
-    // Varias paradas cercanas (p. ej. la ruta de montaña Costa Blanca) caen a
-    // pocos píxeles unas de otras en un mapa a esta escala y sus números quedan
-    // ilegibles apiladas encima. markerLayout separa los círculos lo justo para
-    // que no se toquen y, cuando los desplaza, deja una línea fina + un punto
-    // hacia su ubicación real — así el mapa sigue siendo legible sin dejar de
-    // ser fiel a dónde está cada parada.
-    var layout = markerLayout(state.stops);
+    var sc = niceScaleKm();
+    var sbX = 18, sbY = MAP_H - 18;
+    parts.push('<g>'+
+      '<line class="scale" x1="'+sbX+'" y1="'+sbY+'" x2="'+(sbX+sc.px).toFixed(1)+'" y2="'+sbY+'"></line>'+
+      '<line class="scale" x1="'+sbX+'" y1="'+(sbY-4)+'" x2="'+sbX+'" y2="'+(sbY+4)+'"></line>'+
+      '<line class="scale" x1="'+(sbX+sc.px).toFixed(1)+'" y1="'+(sbY-4)+'" x2="'+(sbX+sc.px).toFixed(1)+'" y2="'+(sbY+4)+'"></line>'+
+      '<text class="scale-text" x="'+sbX+'" y="'+(sbY-8)+'">'+sc.km+' km (aprox.)</text>'+
+    '</g>');
+    document.getElementById("scaleLabel").textContent = "escala: " + sc.km + " km";
 
+    var stops = state.stops;
+    for (var i=1; i<stops.length; i++){
+      var a = project(stops[i-1].lat, stops[i-1].lon), b = project(stops[i].lat, stops[i].lon);
+      var cls = isNav(stops[i]) ? "seg-moto" : "seg-tren";
+      parts.push('<line class="'+cls+'" x1="'+a.x.toFixed(1)+'" y1="'+a.y.toFixed(1)+'" x2="'+b.x.toFixed(1)+'" y2="'+b.y.toFixed(1)+'"></line>');
+    }
+
+    var bases = baseStopIds();
+    var layout = markerLayout(stops, r);
     layout.forEach(function(p){
       var dx = p.x - p.tx, dy = p.y - p.ty;
       if (Math.sqrt(dx*dx+dy*dy) > 2.5){
-        parts.push('<line x1="'+p.tx.toFixed(1)+'" y1="'+p.ty.toFixed(1)+'" x2="'+p.x.toFixed(1)+'" y2="'+p.y.toFixed(1)+'" stroke="var(--ink-muted)" stroke-width="1" opacity="0.5"></line>');
-        parts.push('<circle cx="'+p.tx.toFixed(1)+'" cy="'+p.ty.toFixed(1)+'" r="2" fill="var(--ink-muted)" opacity="0.65"></circle>');
+        parts.push('<line class="leader" x1="'+p.tx.toFixed(1)+'" y1="'+p.ty.toFixed(1)+'" x2="'+p.x.toFixed(1)+'" y2="'+p.y.toFixed(1)+'"></line>');
+        parts.push('<circle class="true-dot" cx="'+p.tx.toFixed(1)+'" cy="'+p.ty.toFixed(1)+'" r="2"></circle>');
       }
     });
-
     layout.forEach(function(p, i){
+      var fs = r >= 10 ? 10 : 9;
       parts.push('<g transform="translate('+p.x.toFixed(1)+','+p.y.toFixed(1)+')">'+
-        '<circle r="10" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"></circle>'+
-        '<text x="0" y="3.5" font-family="var(--font-mono)" font-size="10" font-weight="700" fill="var(--accent-ink)" text-anchor="middle">'+(i+1)+'</text>'+
-        '<title>'+escapeHtml(p.stop.name)+'</title>'+
+        (bases[p.stop.id] ? '<circle class="base-ring" r="'+(r+3.5)+'"></circle>' : '')+
+        '<circle class="marker'+(isNav(p.stop)?"":" tren")+'" r="'+r+'"></circle>'+
+        '<text class="marker-num" x="0" y="'+(fs*0.36).toFixed(1)+'" font-size="'+fs+'" text-anchor="middle">'+(i+1)+'</text>'+
+        '<title>'+(i+1)+'. '+escapeHtml(p.stop.name)+'</title>'+
       '</g>');
     });
-
+    if (zoomed){
+      var visible = layout.filter(function(p){ return p.x > 0 && p.x < MAP_W && p.y > 0 && p.y < MAP_H && inView(p.stop.lat, p.stop.lon); });
+      placeLabels(visible, r).forEach(function(l){
+        parts.push('<text class="stop-label" x="'+l.x.toFixed(1)+'" y="'+l.y.toFixed(1)+'">'+escapeHtml(l.text)+'</text>');
+      });
+    }
     svg.innerHTML = parts.join("");
 
     var link = document.getElementById("gmapsLink");
-    if (state.stops.length >= 2){
-      var o = state.stops[0], d = state.stops[state.stops.length-1];
-      var mid = state.stops.slice(1,-1).map(function(s){ return s.lat+","+s.lon; }).join("|");
-      var url = "https://www.google.com/maps/dir/?api=1&origin="+o.lat+","+o.lon+"&destination="+d.lat+","+d.lon+"&travelmode=driving";
-      if (mid) url += "&waypoints="+encodeURIComponent(mid);
-      link.href = url;
-      link.removeAttribute("aria-disabled");
-    } else {
-      link.href = "#";
-      link.setAttribute("aria-disabled","true");
-    }
+    var url = wholeLoopUrl();
+    if (url){ link.href = url; link.removeAttribute("aria-disabled"); }
+    else { link.removeAttribute("href"); link.setAttribute("aria-disabled","true"); }
   }
 
+  /* ---------------- lista de paradas ---------------- */
   function renderStopsList(){
     var list = document.getElementById("stopsList");
     var hint = document.getElementById("stopsEmptyHint");
     hint.hidden = state.stops.length > 0;
     var active = document.activeElement;
     var activeSel = (active && list.contains(active)) ? focusSelectorFor(active) : null;
+    var bases = baseStopIds();
     list.innerHTML = "";
     state.stops.forEach(function(s, i){
       var li = document.createElement("li");
       li.className = "stop-row";
       var dayLabel = "";
       if (s.dayId){
-        var day = state.days.filter(function(d){return d.id===s.dayId;})[0];
-        dayLabel = day ? (" · " + escapeHtml(day.title||"Día")) : "";
+        var idx = state.days.findIndex(function(d){ return d.id===s.dayId; });
+        dayLabel = idx >= 0 ? (" · Día " + (idx+1)) : "";
       }
+      var nav = isNav(s);
       li.innerHTML =
-        '<span class="stop-num">'+(i+1)+'</span>'+
+        '<span class="stop-num'+(nav?"":" tren")+(bases[s.id]?" base":"")+'" title="'+(bases[s.id]?"Aquí duermen":"")+'">'+(i+1)+'</span>'+
         '<span class="stop-info">'+
           '<span class="stop-name">'+escapeHtml(s.name)+'</span><br>'+
-          '<span class="stop-meta">'+CATEGORY_LABELS[s.category]+dayLabel+'</span>'+
+          '<span class="stop-meta">'+escapeHtml(CATEGORY_LABELS[s.category] || "Parada")+dayLabel+(bases[s.id]?" · duermen aquí":"")+'</span>'+
+          '<button type="button" class="mode-chip'+(nav?"":" tren")+'" data-act="mode" data-id="'+s.id+'" title="Cambiar entre en moto y en tren o a pie">'+(nav?"en moto":"en tren / a pie")+'</button>'+
         '</span>'+
-        '<select class="stop-day-select" data-id="'+s.id+'"></select>'+
-        '<span class="stop-actions">'+
-          '<button class="btn btn-ghost" data-act="up" data-id="'+s.id+'" title="Subir" '+(i===0?"disabled":"")+'>↑</button>'+
-          '<button class="btn btn-ghost" data-act="down" data-id="'+s.id+'" title="Bajar" '+(i===state.stops.length-1?"disabled":"")+'>↓</button>'+
-          '<button class="btn btn-ghost" data-act="del" data-id="'+s.id+'" title="Eliminar">✕</button>'+
+        '<span class="stop-controls">'+
+          '<select class="stop-day-select" data-id="'+s.id+'" aria-label="Día de la parada"></select>'+
+          '<button type="button" class="btn btn-ghost" data-act="up" data-id="'+s.id+'" title="Subir" aria-label="Subir" '+(i===0?"disabled":"")+'>↑</button>'+
+          '<button type="button" class="btn btn-ghost" data-act="down" data-id="'+s.id+'" title="Bajar" aria-label="Bajar" '+(i===state.stops.length-1?"disabled":"")+'>↓</button>'+
+          '<button type="button" class="btn btn-ghost" data-act="del" data-id="'+s.id+'" title="Eliminar" aria-label="Eliminar">✕</button>'+
         '</span>';
       list.appendChild(li);
-
       var daySel = li.querySelector(".stop-day-select");
       var noneOpt = document.createElement("option");
       noneOpt.value=""; noneOpt.textContent="Sin día";
       daySel.appendChild(noneOpt);
-      state.days.forEach(function(d){
+      state.days.forEach(function(d, di){
         var opt = document.createElement("option");
-        opt.value = d.id; opt.textContent = d.title||"Día";
+        opt.value = d.id; opt.textContent = "Día " + (di+1);
         if (s.dayId===d.id) opt.selected = true;
         daySel.appendChild(opt);
       });
-      daySel.addEventListener("change", function(){
-        updateDoc("stops", s.id, { dayId: this.value || null });
-      });
+      daySel.addEventListener("change", function(){ updateDoc("stops", s.id, { dayId: this.value || null }); });
     });
-
     list.querySelectorAll("[data-act]").forEach(function(btn){
       btn.addEventListener("click", function(){
         var id = this.dataset.id, act = this.dataset.act;
         if (act==="del"){ deleteDoc("stops", id); return; }
-        var idx = state.stops.findIndex(function(s){return s.id===id;});
+        var idx = state.stops.findIndex(function(s){ return s.id===id; });
+        if (act==="mode"){ updateDoc("stops", id, { nav: !isNav(state.stops[idx]) }); return; }
         var swapIdx = act==="up" ? idx-1 : idx+1;
         if (swapIdx<0 || swapIdx>=state.stops.length) return;
         var a = state.stops[idx], b = state.stops[swapIdx];
@@ -1148,25 +1467,29 @@
         updateDoc("stops", b.id, {order:ao});
       });
     });
-
     if (activeSel){
       var toFocus = list.querySelector(activeSel);
       if (toFocus) toFocus.focus();
     }
   }
 
-  /* ---------------- focus/draft preservation across rerenders ---------------- */
+  /* ---------------- conservar foco y borradores entre re-renderizados ---------------- */
   function focusSelectorFor(el){
     if (!el || !el.dataset || !el.dataset.id || !el.className) return null;
-    var cls = el.className.split(" ")[0];
+    var cls = String(el.className).split(" ")[0];
     if (!cls) return null;
-    return "." + cls + '[data-id="' + el.dataset.id.replace(/"/g,'') + '"]';
+    var sel = "." + cls + '[data-id="' + el.dataset.id.replace(/"/g,'') + '"]';
+    if (el.dataset.act) sel += '[data-act="' + el.dataset.act + '"]';
+    return sel;
   }
   function captureDaysUIState(container){
     var st = { active:null, drafts:{} };
     var active = document.activeElement;
     if (active && container.contains(active)){
-      st.active = { sel: focusSelectorFor(active), start: active.selectionStart, end: active.selectionEnd };
+      var start = null, end = null;
+      try{ start = active.selectionStart; end = active.selectionEnd; }catch(e){}
+      st.active = { sel: focusSelectorFor(active), start:start, end:end,
+        value: (active.tagName === "TEXTAREA" || active.tagName === "INPUT") ? active.value : null };
     }
     container.querySelectorAll(".add-expense-form").forEach(function(f){
       st.drafts[f.dataset.dayId] = {
@@ -1189,6 +1512,10 @@
     if (st.active && st.active.sel){
       var el = container.querySelector(st.active.sel);
       if (el){
+        if (st.active.value !== null && typeof st.active.value === "string" && el.value !== st.active.value){
+          el.value = st.active.value;  // lo que se está escribiendo gana sobre la última versión guardada
+          if (el.classList.contains("day-notes")) autoResizeTextarea(el);
+        }
         el.focus();
         if (typeof st.active.start === "number" && el.setSelectionRange){
           try{ el.setSelectionRange(st.active.start, st.active.end); }catch(e){}
@@ -1197,75 +1524,134 @@
     }
   }
 
-  /* ---------------- itinerary render ---------------- */
+  /* ---------------- itinerario ---------------- */
+  function kmInfo(km){
+    km = Number(km)||0;
+    if (km <= 0) return { cls:"none", label:"Día sin moto", pct:0 };
+    if (km > KM_LIMIT) return { cls:"over", label:"Supera el límite de "+KM_LIMIT+" km", pct:100 };
+    if (km > KM_WARN) return { cls:"warn", label:"Cerca del límite ("+fmtInt(km)+" de "+KM_LIMIT+")", pct:km/KM_LIMIT*100 };
+    return { cls:"ok", label:"Dentro del límite ("+fmtInt(km)+" de "+KM_LIMIT+")", pct:km/KM_LIMIT*100 };
+  }
   function renderDays(){
     var list = document.getElementById("daysList");
     var hint = document.getElementById("daysEmptyHint");
     hint.hidden = state.days.length > 0;
     var uiState = captureDaysUIState(list);
+    var editingSel = uiState.active && uiState.active.sel;
     list.innerHTML = "";
 
     state.days.forEach(function(day, i){
       var card = document.createElement("div");
       card.className = "day-card";
+      var isEditingNote = editingSel === '.day-notes[data-id="'+day.id+'"]';
       var dayExpenses = state.expenses.filter(function(e){ return e.dayId===day.id; });
       var subtotal = dayExpenses.reduce(function(s,e){ return s + (Number(e.amount)||0); }, 0);
+      var ki = kmInfo(day.km);
+      var link = dayRouteUrl(i);
 
       var rowsHtml = dayExpenses.map(function(e){
         return '<tr data-exp-id="'+e.id+'">'+
           '<td>'+escapeHtml(e.concept)+'</td>'+
-          '<td><span class="cat-chip"><span class="dot" style="background:'+catColor(e.category)+'"></span>'+categoryLabel(e.category)+'</span></td>'+
+          '<td><span class="cat-chip"><span class="dot" style="background:'+catColor(e.category)+'"></span>'+escapeHtml(categoryLabel(e.category))+'</span></td>'+
           '<td class="amt">'+fmtEUR(e.amount)+'</td>'+
-          '<td><button class="btn btn-ghost" data-act="del-exp" data-id="'+e.id+'" title="Eliminar">✕</button></td>'+
+          '<td><button type="button" class="btn btn-ghost" data-act="del-exp" data-id="'+e.id+'" title="Eliminar" aria-label="Eliminar gasto">✕</button></td>'+
         '</tr>';
       }).join("");
-
       var catOptions = EXPENSE_CATEGORIES.map(function(c){ return '<option value="'+c.id+'">'+c.label+'</option>'; }).join("");
 
       card.innerHTML =
         '<div class="day-head">'+
           '<span class="day-badge">Día '+(i+1)+'</span>'+
           '<div class="day-fields">'+
-            '<input type="text" class="day-title" data-id="'+day.id+'" value="'+escapeHtml(day.title||"")+'" placeholder="Destino del día (ej. Sevilla → Ronda)">'+
-            '<span class="day-date-computed">'+(function(){ var dt = computeDayDate(i); return dt ? escapeHtml(formatDayDateShort(dt)) : "Sin fecha — ponle una arriba"; })()+'</span>'+
+            '<input type="text" class="day-title" data-id="'+day.id+'" value="'+escapeHtml(day.title||"")+'" placeholder="Destino del día (ej. Verona → Riva del Garda)" aria-label="Título del día '+(i+1)+'">'+
+            '<span class="day-date-computed">'+(function(){ var dt = computeDayDate(i); return dt ? escapeHtml(formatDayDateShort(dt)) : "Sin fecha: ponle una arriba"; })()+'</span>'+
           '</div>'+
           '<span class="stop-actions">'+
-            '<button class="btn btn-ghost" data-act="day-up" data-id="'+day.id+'" '+(i===0?"disabled":"")+'>↑</button>'+
-            '<button class="btn btn-ghost" data-act="day-down" data-id="'+day.id+'" '+(i===state.days.length-1?"disabled":"")+'>↓</button>'+
-            '<button class="btn btn-ghost" data-act="day-del" data-id="'+day.id+'">✕</button>'+
+            '<button type="button" class="btn btn-ghost" data-act="day-up" data-id="'+day.id+'" aria-label="Subir día" '+(i===0?"disabled":"")+'>↑</button>'+
+            '<button type="button" class="btn btn-ghost" data-act="day-down" data-id="'+day.id+'" aria-label="Bajar día" '+(i===state.days.length-1?"disabled":"")+'>↓</button>'+
+            '<button type="button" class="btn btn-ghost" data-act="day-del" data-id="'+day.id+'" aria-label="Eliminar día">✕</button>'+
           '</span>'+
         '</div>'+
-        '<textarea class="day-notes" data-id="'+day.id+'" placeholder="Notas de la etapa: carreteras, paradas, kilómetros…">'+escapeHtml(day.notes||"")+'</textarea>'+
-        '<table class="expense-table"><thead><tr><th>Concepto</th><th>Categoría</th><th style="text-align:right">Importe</th><th></th></tr></thead>'+
+        '<div class="day-meta">'+
+          '<label class="km-field">Km en moto <input type="number" min="0" max="3000" step="1" inputmode="numeric" class="day-km" data-id="'+day.id+'" value="'+((Number(day.km)||0) ? Number(day.km) : "")+'" placeholder="0"></label>'+
+          '<div class="km-meter" title="Límite acordado: '+KM_LIMIT+' km por día">'+
+            '<div class="km-track"><div class="km-fill '+ki.cls+'" style="width:'+ki.pct.toFixed(1)+'%"></div></div>'+
+            '<span class="km-state '+ki.cls+'">'+escapeHtml(ki.label)+'</span>'+
+          '</div>'+
+          (link ? '<a class="day-link" href="'+escapeHtml(link)+'" target="_blank" rel="noopener">Ruta del día en Google Maps ↗</a>' : '')+
+        '</div>'+
+        '<div class="day-notes-box'+(isEditingNote?" editing":"")+'" data-id="'+day.id+'">'+
+          '<div class="day-notes-toolbar">'+
+            '<button type="button" class="btn btn-ghost btn-sm note-bold-btn" data-act="note-bold" title="Negrilla: selecciona texto y pulsa aquí">N</button>'+
+            '<span class="day-notes-hint">selecciona texto y pulsa N, o escribe **así**</span>'+
+          '</div>'+
+          '<div class="day-notes-view" tabindex="0" data-id="'+day.id+'">'+renderNoteView(day.notes)+'</div>'+
+          '<textarea class="day-notes" data-id="'+day.id+'" placeholder="Notas de la etapa: carreteras, paradas, kilómetros…" aria-label="Notas del día '+(i+1)+'">'+escapeHtml(day.notes||"")+'</textarea>'+
+        '</div>'+
+        '<div class="expense-scroll"><table class="expense-table"><thead><tr><th>Concepto</th><th>Categoría</th><th style="text-align:right">Importe</th><th></th></tr></thead>'+
         '<tbody>'+rowsHtml+
           '<tr class="expense-add-row"><td colspan="4">'+
             '<form class="add-expense-form" data-day-id="'+day.id+'" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">'+
-              '<input type="text" class="concept" placeholder="Concepto (ej. hotel, gasolina…)" required>'+
-              '<select class="excat">'+catOptions+'</select>'+
-              '<input type="text" inputmode="decimal" class="amount" placeholder="€ (ej. 15 o 15,50)" required>'+
+              '<input type="text" class="concept" placeholder="Concepto (ej. hostel, gasolina…)" aria-label="Concepto del gasto" required>'+
+              '<select class="excat" aria-label="Categoría del gasto">'+catOptions+'</select>'+
+              '<input type="text" inputmode="decimal" class="amount" placeholder="€ (ej. 15 o 15,50)" aria-label="Importe" required>'+
               '<button type="submit" class="btn btn-outline">+ Añadir gasto</button>'+
             '</form>'+
           '</td></tr>'+
-        '</tbody></table>'+
+        '</tbody></table></div>'+
         '<div class="day-subtotal">Subtotal del día: <b>'+fmtEUR(subtotal)+'</b></div>';
-
       list.appendChild(card);
     });
 
     list.querySelectorAll(".day-title").forEach(function(el){
-      el.addEventListener("change", function(){ updateDoc("days", this.dataset.id, {title:this.value.slice(0,80)}); });
+      el.addEventListener("change", function(){ updateDoc("days", this.dataset.id, {title:this.value.slice(0,140)}); });
+    });
+    list.querySelectorAll(".day-km").forEach(function(el){
+      el.addEventListener("input", function(){
+        var ki = kmInfo(this.value);
+        var meta = this.closest(".day-meta");
+        var fill = meta.querySelector(".km-fill"), lab = meta.querySelector(".km-state");
+        fill.className = "km-fill " + ki.cls; fill.style.width = ki.pct.toFixed(1) + "%";
+        lab.className = "km-state " + ki.cls; lab.textContent = ki.label;
+      });
+      el.addEventListener("change", function(){
+        var v = Math.max(0, Math.round(parseFloat(String(this.value).replace(",", ".")) || 0));
+        updateDoc("days", this.dataset.id, {km:v});
+      });
     });
     list.querySelectorAll(".day-notes").forEach(function(el){
-      autoResizeTextarea(el);
+      var box = el.closest(".day-notes-box");
+      if (box && box.classList.contains("editing")) autoResizeTextarea(el);
       el.addEventListener("input", function(){ autoResizeTextarea(this); });
-      el.addEventListener("input", debounce(function(){ updateDoc("days", this.dataset.id, {notes:this.value.slice(0,2000)}); }, 500));
+      el.addEventListener("input", debounce(function(){ updateDoc("days", this.dataset.id, {notes:this.value.slice(0,20000)}); }, 600));
+      el.addEventListener("blur", function(){
+        var b = this.closest(".day-notes-box");
+        if (!b) return;
+        b.querySelector(".day-notes-view").innerHTML = renderNoteView(this.value);
+        b.classList.remove("editing");
+      });
+    });
+    list.querySelectorAll(".day-notes-view").forEach(function(el){
+      el.addEventListener("click", function(){ enterNoteEdit(this.closest(".day-notes-box")); });
+      el.addEventListener("keydown", function(e){
+        if (e.key === "Enter" || e.key === " "){ e.preventDefault(); enterNoteEdit(this.closest(".day-notes-box")); }
+      });
+    });
+    list.querySelectorAll('[data-act="note-bold"]').forEach(function(btn){
+      btn.addEventListener("mousedown", function(e){
+        e.preventDefault();
+        toggleBoldSelection(this.closest(".day-notes-box").querySelector(".day-notes"));
+      });
     });
     list.querySelectorAll('[data-act="day-del"]').forEach(function(btn){
       btn.addEventListener("click", function(){
         var id = this.dataset.id;
-        state.expenses.filter(function(e){return e.dayId===id;}).forEach(function(e){ deleteDoc("expenses", e.id); });
-        state.stops.filter(function(s){return s.dayId===id;}).forEach(function(s){ updateDoc("stops", s.id, {dayId:null}); });
-        deleteDoc("days", id);
+        var day = state.days.filter(function(d){ return d.id===id; })[0];
+        confirmDialog("¿Borrar el día «" + ((day && day.title) || "sin título") + "» con sus gastos? Sus paradas quedan en el mapa sin día asignado.", function(){
+          state.expenses.filter(function(e){return e.dayId===id;}).forEach(function(e){ deleteDoc("expenses", e.id); });
+          state.stops.filter(function(s){return s.dayId===id;}).forEach(function(s){ updateDoc("stops", s.id, {dayId:null}); });
+          deleteDoc("days", id);
+        });
       });
     });
     list.querySelectorAll('[data-act="day-up"],[data-act="day-down"]').forEach(function(btn){
@@ -1289,9 +1675,8 @@
         var dayId = this.dataset.dayId;
         var concept = this.querySelector(".concept").value.trim();
         var category = this.querySelector(".excat").value;
-        var rawAmount = this.querySelector(".amount").value.trim().replace(",", ".");
-        var amount = parseFloat(rawAmount);
-        if (!concept){ toast("Escribe un concepto para el gasto (ej. \"hotel\", \"gasolina\").", "err"); return; }
+        var amount = parseFloat(this.querySelector(".amount").value.trim().replace(",", "."));
+        if (!concept){ toast("Escribe un concepto para el gasto (ej. \"hostel\", \"gasolina\").", "err"); return; }
         if (isNaN(amount) || amount<0){ toast("Escribe un importe válido, por ejemplo 15 o 15,50.", "err"); return; }
         this.querySelector(".concept").value = "";
         this.querySelector(".amount").value = "";
@@ -1299,32 +1684,26 @@
         addDoc("expenses", { dayId:dayId, concept:concept, category:category, amount:amount });
       });
     });
-
     restoreDaysUIState(list, uiState);
   }
-
   function categoryLabel(id){
     var c = EXPENSE_CATEGORIES.filter(function(c){return c.id===id;})[0];
     return c ? c.label : id;
   }
 
-  /* ---------------- budget chart & stats ---------------- */
+  /* ---------------- presupuesto y cifras ---------------- */
   function renderBudget(){
     var totals = {};
     EXPENSE_CATEGORIES.forEach(function(c){ totals[c.id] = 0; });
     state.expenses.forEach(function(e){ totals[e.category] = (totals[e.category]||0) + (Number(e.amount)||0); });
     var max = Math.max.apply(null, EXPENSE_CATEGORIES.map(function(c){ return totals[c.id]; }).concat([1]));
     var grand = EXPENSE_CATEGORIES.reduce(function(s,c){ return s+totals[c.id]; }, 0);
-
     if (grand <= 0){
       document.getElementById("budgetChart").innerHTML =
-        '<p class="empty-hint" style="padding:2px 2px 4px;">Todavía no hay gastos añadidos — el desglose por categoría aparece aquí en cuanto añadas el primero en un día.</p>';
+        '<p class="empty-hint" style="padding:2px 2px 4px;">Todavía no hay gastos: el desglose por categoría aparece aquí en cuanto añadan el primero en un día.</p>';
       document.getElementById("grandTotal2").textContent = fmtEUR(0);
       return;
     }
-
-    // Las categorías sin gasto (total 0) no dibujan barra: una barra con un
-    // mínimo artificial daría a entender que sí se gastó algo en ellas.
     var html = EXPENSE_CATEGORIES.slice().sort(function(a,b){ return totals[b.id]-totals[a.id]; }).map(function(c){
       var value = totals[c.id];
       var isZero = value <= 0;
@@ -1339,14 +1718,14 @@
     document.getElementById("budgetChart").innerHTML = html;
     document.getElementById("grandTotal2").textContent = fmtEUR(grand);
   }
-
   function renderStats(){
     document.getElementById("statDays").textContent = state.days.length;
     document.getElementById("statStops").textContent = state.stops.length;
+    var km = state.days.reduce(function(s,d){ return s + (Number(d.km)||0); }, 0);
+    document.getElementById("statKm").textContent = fmtInt(km);
     var grand = state.expenses.reduce(function(s,e){ return s+(Number(e.amount)||0); }, 0);
     document.getElementById("statTotal").textContent = fmtEUR(grand);
-    var avg = state.days.length ? grand/state.days.length : 0;
-    document.getElementById("statAvg").textContent = fmtEUR(avg);
+    document.getElementById("statAvg").textContent = fmtEUR(state.days.length ? grand/state.days.length : 0);
   }
 
   if (document.readyState === "loading"){
